@@ -147,6 +147,7 @@ textarea { min-height: 70px; resize: vertical; }
 }
 .session .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .session .game { font-weight: 800; font-size: 1.15rem; }
+.session .exps { font-size: 0.85rem; color: var(--ink-soft); margin-top: -6px; }
 .session .date { color: var(--ink-soft); font-size: 0.85rem; white-space: nowrap; }
 .winner {
   display: flex; align-items: center; gap: 10px;
@@ -177,6 +178,8 @@ textarea { min-height: 70px; resize: vertical; }
 .list-item .grow { flex: 1; min-width: 0; }
 .list-item .title { font-weight: 700; }
 .list-item .sub { font-size: 0.85rem; color: var(--ink-soft); }
+.list-item.sub-item { padding-left: 40px; border-top-style: dashed; }
+.list-item.sub-item .title { font-weight: 600; }
 .icon-btn { background: none; border: 0; padding: 8px; border-radius: var(--radius-sm); color: var(--ink-soft); }
 .icon-btn svg { width: 20px; height: 20px; display: block; }
 
@@ -303,6 +306,10 @@ dialog::backdrop { background: rgba(12,15,31,0.55); }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
       Sessions
     </button>
+    <button data-view="games">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1" fill="currentColor"/></svg>
+      Games
+    </button>
     <button data-view="players">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6M17 4a4 4 0 0 1 0 8M22 21c0-3-2-5-4-5.5"/></svg>
       Players
@@ -339,6 +346,15 @@ dialog::backdrop { background: rgba(12,15,31,0.55); }
       </div>
       <label class="toggle"><input type="checkbox" id="f-low"> Lowest score wins</label>
 
+      <div class="field" id="exp-field" hidden>
+        <span class="label">Expansions used</span>
+        <div class="chips" id="f-exps"></div>
+        <div class="inline-add">
+          <input type="text" id="f-newexp" placeholder="Add a new expansion" autocomplete="off">
+          <button type="button" class="btn ghost small" id="f-addexp">Add</button>
+        </div>
+      </div>
+
       <div class="field">
         <span class="label">Who played?</span>
         <div class="chips" id="f-players"></div>
@@ -355,7 +371,7 @@ dialog::backdrop { background: rgba(12,15,31,0.55); }
 
       <div class="field">
         <label for="f-notes">Notes (optional)</label>
-        <textarea id="f-notes" placeholder="Expansion used, house rules, who brought snacks…"></textarea>
+        <textarea id="f-notes" placeholder="House rules, who brought snacks…"></textarea>
       </div>
     </div>
     <div class="sheet-foot">
@@ -393,18 +409,18 @@ if (configured) {
   fs = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 }
 
-const LEGACY_KEY = 'gameNightScores.v1';   // data saved by the first (device-only) version
 const COLORS = ['#E4572E', '#2E86AB', '#F2B33D', '#4CAF7A', '#9B5DE5', '#F15BB5', '#00A6A6', '#8D6E63', '#5C6BC0', '#C0CA33'];
 
 let user = null;
-let db = { players: [], sessions: [], lowWinsGames: {} };
-let loaded = { players: false, sessions: false };
+let db = { players: [], games: [], sessions: [] };
+let loaded = { players: false, games: false, sessions: false };
+const ready = () => Object.values(loaded).every(Boolean);
 let pendingSync = false;
 let unsubs = [];
 
 const playersCol = () => collection(fs, 'users', user.uid, 'players');
+const gamesCol = () => collection(fs, 'users', user.uid, 'games');
 const sessionsCol = () => collection(fs, 'users', user.uid, 'sessions');
-const settingsRef = () => doc(fs, 'users', user.uid, 'meta', 'settings');
 const newId = () => doc(playersCol()).id;
 
 // Writes apply locally straight away; the promise only settles once the server confirms,
@@ -413,18 +429,19 @@ const write = p => p.catch(err => { console.error(err); toast('Couldn’t save t
 
 function startSync() {
   stopSync();
-  loaded = { players: false, sessions: false };
+  loaded = { players: false, games: false, sessions: false };
   unsubs.push(onSnapshot(playersCol(), snap => {
     db.players = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     loaded.players = true; afterSnapshot();
+  }, onSyncError));
+  unsubs.push(onSnapshot(gamesCol(), snap => {
+    db.games = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    loaded.games = true; afterSnapshot();
   }, onSyncError));
   unsubs.push(onSnapshot(sessionsCol(), { includeMetadataChanges: true }, snap => {
     db.sessions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     pendingSync = snap.metadata.hasPendingWrites;
     loaded.sessions = true; afterSnapshot();
-  }, onSyncError));
-  unsubs.push(onSnapshot(settingsRef(), snap => {
-    db.lowWinsGames = (snap.exists() && snap.data().lowWinsGames) || {};
   }, onSyncError));
 }
 function stopSync() { unsubs.forEach(u => u()); unsubs = []; }
@@ -433,21 +450,8 @@ function onSyncError(err) {
   toast(err.code === 'permission-denied' ? 'Database rules are blocking access. Check the Firestore rules.' : 'Sync problem. Your changes are kept on this device.');
 }
 
-let migrationChecked = false;
 function afterSnapshot() {
-  if (loaded.players && loaded.sessions && !migrationChecked) { migrationChecked = true; offerLegacyUpload(); }
   if (!dlg.open) render();
-}
-
-// Moves scores saved by the device-only version into the account (once per account per device).
-function offerLegacyUpload() {
-  let legacy;
-  try { legacy = JSON.parse(localStorage.getItem(LEGACY_KEY) || 'null'); } catch { legacy = null; }
-  const flag = `gameNightScores.uploaded.${user.uid}`;
-  if (!legacy || !legacy.sessions?.length && !legacy.players?.length || localStorage.getItem(flag)) return;
-  const ok = confirm(`This device has ${legacy.players.length} players and ${legacy.sessions.length} sessions from before you signed in.\n\nAdd them to your account so they sync everywhere?`);
-  localStorage.setItem(flag, '1');
-  if (ok) { mergeIn(legacy); toast('Added your earlier scores to your account'); }
 }
 
 /* =========================================================
@@ -468,6 +472,36 @@ function addPlayer(name) {
   return p;
 }
 
+const gameById = id => db.games.find(g => g.id === id);
+const gameByName = name => db.games.find(g => g.name.toLowerCase() === name.trim().toLowerCase());
+const gameNameOf = s => gameById(s.gameId)?.name || 'Unknown game';
+const sessionsOfGame = id => db.sessions.filter(s => s.gameId === id);
+function expansionNames(s) {
+  const exps = gameById(s.gameId)?.expansions || [];
+  return s.expansionIds.map(id => exps.find(x => x.id === id)?.name).filter(Boolean);
+}
+
+function addGame(name, lowWins = false) {
+  name = name.trim();
+  if (!name) return null;
+  const existing = gameByName(name);
+  if (existing) return existing;
+  const g = { id: newId(), name, lowWins, expansions: [] };
+  db.games.push(g);
+  write(setDoc(doc(gamesCol(), g.id), stripId(g)));
+  return g;
+}
+function addExpansion(g, name) {
+  name = name.trim();
+  if (!name) return null;
+  const existing = g.expansions.find(x => x.name.toLowerCase() === name.toLowerCase());
+  if (existing) return existing;
+  const x = { id: newId(), name };
+  g.expansions.push(x);
+  write(setDoc(doc(gamesCol(), g.id), { expansions: g.expansions }, { merge: true }));
+  return x;
+}
+
 function winnersOf(s) {
   if (!s.results?.length) return [];
   const scores = s.results.map(r => r.score);
@@ -477,8 +511,8 @@ function winnersOf(s) {
 function sortedResults(s) {
   return [...(s.results || [])].sort((a, b) => s.lowWins ? a.score - b.score : b.score - a.score);
 }
-function gameNames() {
-  return [...new Set(db.sessions.map(s => s.game))].sort((a, b) => a.localeCompare(b));
+function playedGames() {
+  return db.games.filter(g => sessionsOfGame(g.id).length).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 // Firestore batches hold up to 500 writes; chunk to be safe.
@@ -493,19 +527,18 @@ const stripId = ({ id, ...rest }) => rest;
 
 function mergeIn(data) {
   const ops = [];
-  (data.players || []).forEach(p => ops.push(b => b.set(doc(playersCol(), p.id), stripId(p), { merge: true })));
-  (data.sessions || []).forEach(s => ops.push(b => b.set(doc(sessionsCol(), s.id), stripId(s), { merge: true })));
-  if (data.lowWinsGames && Object.keys(data.lowWinsGames).length)
-    ops.push(b => b.set(settingsRef(), { lowWinsGames: data.lowWinsGames }, { merge: true }));
+  data.players.forEach(p => ops.push(b => b.set(doc(playersCol(), p.id), stripId(p), { merge: true })));
+  data.games.forEach(g => ops.push(b => b.set(doc(gamesCol(), g.id), stripId(g), { merge: true })));
+  data.sessions.forEach(s => ops.push(b => b.set(doc(sessionsCol(), s.id), stripId(s), { merge: true })));
   runBatched(ops);
 }
 function replaceWith(data) {
   const ops = [];
   db.players.forEach(p => ops.push(b => b.delete(doc(playersCol(), p.id))));
+  db.games.forEach(g => ops.push(b => b.delete(doc(gamesCol(), g.id))));
   db.sessions.forEach(s => ops.push(b => b.delete(doc(sessionsCol(), s.id))));
-  ops.push(b => b.set(settingsRef(), { lowWinsGames: data.lowWinsGames || {} }));
   runBatched(ops);
-  mergeIn({ ...data, lowWinsGames: {} });
+  mergeIn(data);
 }
 
 /* =========================================================
@@ -563,8 +596,8 @@ if (!configured) {
     authScreen.hidden = !!u;
     document.querySelector('.app').hidden = !u;
     document.getElementById('fab').hidden = !u || currentView !== 'sessions';
-    if (u) { migrationChecked = false; startSync(); render(); }
-    else { stopSync(); db = { players: [], sessions: [], lowWinsGames: {} }; A('auth-pass').value = ''; }
+    if (u) { startSync(); render(); }
+    else { stopSync(); db = { players: [], games: [], sessions: [] }; A('auth-pass').value = ''; }
   });
 }
 
@@ -588,24 +621,26 @@ function show(view) {
 }
 function render() {
   if (!user) return;
-  if (!loaded.players || !loaded.sessions) { main.innerHTML = '<p class="muted">Loading your scores…</p>'; return; }
+  if (!ready()) { main.innerHTML = '<p class="muted">Loading your scores…</p>'; return; }
   if (currentView === 'sessions') renderSessions();
+  else if (currentView === 'games') renderGames();
   else if (currentView === 'players') renderPlayers();
   else renderStats();
 }
 
 const crownSVG = '<svg class="crown" viewBox="0 0 24 24" fill="currentColor"><path d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5L3 7z"/></svg>';
 const editSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+const plusSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
 const trashSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>';
 
 /* =========================================================
    Sessions view
    ========================================================= */
 function renderSessions() {
-  const games = gameNames();
-  if (gameFilter && !games.includes(gameFilter)) gameFilter = '';
+  const games = playedGames();
+  if (gameFilter && !games.some(g => g.id === gameFilter)) gameFilter = '';
   const list = db.sessions
-    .filter(s => !gameFilter || s.game === gameFilter)
+    .filter(s => !gameFilter || s.gameId === gameFilter)
     .sort((a, b) => b.date.localeCompare(a.date) || (b.created || 0) - (a.created || 0));
 
   let html = `<div class="view-head"><h2>Sessions</h2>
@@ -619,7 +654,7 @@ function renderSessions() {
 
   html += `<div class="filters"><select id="game-filter" aria-label="Filter by game">
     <option value="">All games (${db.sessions.length})</option>
-    ${games.map(g => `<option value="${esc(g)}" ${g === gameFilter ? 'selected' : ''}>${esc(g)}</option>`).join('')}
+    ${games.map(g => `<option value="${g.id}" ${g.id === gameFilter ? 'selected' : ''}>${esc(g.name)}</option>`).join('')}
   </select></div>`;
 
   let lastMonth = '', open = false;
@@ -636,9 +671,11 @@ function renderSessions() {
     const winnerNames = wins.map(id => playerById(id)?.name || 'Unknown').join(' & ');
     const winScore = res[0]?.score ?? '';
     const others = res.filter(r => !wins.includes(r.playerId));
+    const exps = expansionNames(s);
     html += `<button class="session" data-edit="${s.id}">
-      <div class="row1"><span class="game">${esc(s.game)}</span>
+      <div class="row1"><span class="game">${esc(gameNameOf(s))}</span>
         <span class="date">${d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span></div>
+      ${exps.length ? `<div class="exps">+ ${esc(exps.join(', '))}</div>` : ''}
       <div class="winner">${crownSVG}<span class="name">${esc(winnerNames)}${wins.length > 1 ? ' (tie)' : ''}</span><span class="score">${esc(winScore)}</span></div>
       ${others.length ? `<div class="others">${others.map(r => {
         const p = playerById(r.playerId);
@@ -659,6 +696,11 @@ main.addEventListener('click', e => {
   if (!act) return;
   const a = act.dataset.action;
   if (a === 'new') openEditor();
+  if (a === 'add-expansion') addExpansionFromList(act.dataset.id);
+  if (a === 'rename-game') renameGame(act.dataset.id);
+  if (a === 'delete-game') deleteGame(act.dataset.id);
+  if (a === 'rename-expansion') renameExpansion(act.dataset.id, act.dataset.exp);
+  if (a === 'delete-expansion') deleteExpansion(act.dataset.id, act.dataset.exp);
   if (a === 'rename-player') renamePlayer(act.dataset.id);
   if (a === 'delete-player') deletePlayer(act.dataset.id);
   if (a === 'export') exportData();
@@ -666,6 +708,105 @@ main.addEventListener('click', e => {
   if (a === 'signout' && confirm('Sign out on this device?')) signOut(auth);
 });
 document.getElementById('fab').addEventListener('click', () => openEditor());
+
+/* =========================================================
+   Games view
+   ========================================================= */
+function renderGames() {
+  let html = `<div class="view-head"><h2>Games</h2></div>
+    <form class="add-row" id="add-game-form">
+      <input type="text" id="new-game" placeholder="Game name" autocomplete="off" aria-label="Game name">
+      <button class="btn" type="submit">Add game</button>
+    </form>`;
+  if (!db.games.length) {
+    html += `<div class="empty"><p>Add the games you own, then add their expansions. Games you type in a new session are added here too.</p></div>`;
+  } else {
+    const sorted = [...db.games].sort((a, b) => a.name.localeCompare(b.name));
+    html += `<div class="list">${sorted.map(g => {
+      const played = sessionsOfGame(g.id);
+      const exps = [...g.expansions].sort((a, b) => a.name.localeCompare(b.name));
+      return `<div class="list-item">
+        <div class="grow"><div class="title">${esc(g.name)}</div>
+          <div class="sub">${played.length} played${g.lowWins ? ', lowest score wins' : ''}</div></div>
+        <button class="icon-btn" data-action="add-expansion" data-id="${g.id}" aria-label="Add expansion to ${esc(g.name)}" title="Add expansion">${plusSVG}</button>
+        <button class="icon-btn" data-action="rename-game" data-id="${g.id}" aria-label="Rename ${esc(g.name)}">${editSVG}</button>
+        <button class="icon-btn" data-action="delete-game" data-id="${g.id}" aria-label="Delete ${esc(g.name)}">${trashSVG}</button>
+      </div>${exps.map(x => {
+        const n = played.filter(s => s.expansionIds.includes(x.id)).length;
+        return `<div class="list-item sub-item">
+          <div class="grow"><div class="title">${esc(x.name)}</div>
+            <div class="sub">Expansion, used ${n} time${n === 1 ? '' : 's'}</div></div>
+          <button class="icon-btn" data-action="rename-expansion" data-id="${g.id}" data-exp="${x.id}" aria-label="Rename ${esc(x.name)}">${editSVG}</button>
+          <button class="icon-btn" data-action="delete-expansion" data-id="${g.id}" data-exp="${x.id}" aria-label="Delete ${esc(x.name)}">${trashSVG}</button>
+        </div>`;
+      }).join('')}`;
+    }).join('')}</div>`;
+  }
+  main.innerHTML = html;
+  document.getElementById('add-game-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const input = document.getElementById('new-game');
+    if (!input.value.trim()) return;
+    const before = db.games.length;
+    const g = addGame(input.value);
+    toast(db.games.length > before ? `Added ${g.name}` : `${g.name} is already a game`);
+    renderGames();
+    document.getElementById('new-game').focus();
+  });
+}
+function addExpansionFromList(id) {
+  const g = gameById(id);
+  const name = prompt(`New expansion for ${g.name}`);
+  if (!name || !name.trim()) return;
+  const before = g.expansions.length;
+  const x = addExpansion(g, name);
+  toast(g.expansions.length > before ? `Added ${x.name}` : `${g.name} already has ${x.name}`);
+  render();
+}
+function renameGame(id) {
+  const g = gameById(id);
+  const name = prompt('Rename game', g.name)?.trim();
+  if (!name || name === g.name) return;
+  const other = gameByName(name);
+  if (other && other !== g) return toast(`${other.name} already exists`);
+  g.name = name;
+  write(setDoc(doc(gamesCol(), id), { name }, { merge: true }));
+  render();
+}
+function deleteGame(id) {
+  const g = gameById(id);
+  const n = sessionsOfGame(id).length;
+  if (n) return alert(`${g.name} is used in ${n} session${n > 1 ? 's' : ''}. Delete those sessions first.`);
+  if (!confirm(`Delete ${g.name}?`)) return;
+  write(deleteDoc(doc(gamesCol(), id)));
+  toast(`Deleted ${g.name}`);
+}
+function renameExpansion(id, xid) {
+  const g = gameById(id);
+  const x = g.expansions.find(e => e.id === xid);
+  const name = prompt('Rename expansion', x.name)?.trim();
+  if (!name) return;
+  x.name = name;
+  write(setDoc(doc(gamesCol(), id), { expansions: g.expansions }, { merge: true }));
+  render();
+}
+function deleteExpansion(id, xid) {
+  const g = gameById(id);
+  const x = g.expansions.find(e => e.id === xid);
+  const affected = db.sessions.filter(s => s.expansionIds.includes(xid));
+  const msg = affected.length
+    ? `Delete ${x.name}? It will be removed from ${affected.length} session${affected.length > 1 ? 's' : ''} (their scores stay).`
+    : `Delete ${x.name}?`;
+  if (!confirm(msg)) return;
+  const expansions = g.expansions.filter(e => e.id !== xid);
+  const ops = [b => b.set(doc(gamesCol(), id), { expansions }, { merge: true })];
+  affected.forEach(s => {
+    const expansionIds = s.expansionIds.filter(e => e !== xid);
+    ops.push(b => b.set(doc(sessionsCol(), s.id), { expansionIds }, { merge: true }));
+  });
+  runBatched(ops);
+  toast(`Deleted ${x.name}`);
+}
 
 /* =========================================================
    Players view
@@ -744,8 +885,8 @@ function renderStats() {
       return { p, played, won, rate: played ? won / played : 0 };
     }).filter(r => r.played).sort((a, b) => b.won - a.won || b.rate - a.rate);
 
-    const gRows = gameNames().map(g => {
-      const ss = db.sessions.filter(s => s.game === g);
+    const gRows = playedGames().map(g => {
+      const ss = sessionsOfGame(g.id);
       const tally = {};
       ss.forEach(s => winnersOf(s).forEach(id => tally[id] = (tally[id] || 0) + 1));
       const topN = Math.max(0, ...Object.values(tally));
@@ -753,7 +894,7 @@ function renderStats() {
       const low = ss.some(s => s.lowWins);
       const all = ss.flatMap(s => s.results);
       const bestR = [...all].sort((a, b) => low ? a.score - b.score : b.score - a.score)[0];
-      return { g, n: ss.length, champs: champs.join(', '), best: bestR ? `${bestR.score} (${playerById(bestR.playerId)?.name || '?'})` : '' };
+      return { g: g.name, n: ss.length, champs: champs.join(', '), best: bestR ? `${bestR.score} (${playerById(bestR.playerId)?.name || '?'})` : '' };
     }).sort((a, b) => b.n - a.n);
 
     html += `<div class="stats-wrap">
@@ -779,7 +920,7 @@ function renderStats() {
 }
 
 function exportData() {
-  const blob = new Blob([JSON.stringify({ app: 'game-night-scores', version: 2, exported: new Date().toISOString(), ...db }, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify({ app: 'game-night-scores', version: 3, exported: new Date().toISOString(), ...db }, null, 2)], { type: 'application/json' });
   const file = new File([blob], `game-night-scores-${todayISO()}.json`, { type: 'application/json' });
   if (navigator.canShare && navigator.canShare({ files: [file] }) && /iPhone|iPad|Android/i.test(navigator.userAgent)) {
     navigator.share({ files: [file], title: 'Game night scores backup' }).catch(() => {});
@@ -799,9 +940,9 @@ document.getElementById('import-file').addEventListener('change', async e => {
   let d;
   try {
     d = JSON.parse(await f.text());
-    if (!Array.isArray(d.players) || !Array.isArray(d.sessions)) throw new Error('bad file');
+    if (![d.players, d.games, d.sessions].every(Array.isArray)) throw new Error('bad file');
   } catch { return toast('That file isn’t a valid backup'); }
-  const merge = confirm(`This backup has ${d.players.length} players and ${d.sessions.length} sessions.\n\nOK = merge with your account\nCancel = choose replace instead`);
+  const merge = confirm(`This backup has ${d.players.length} players, ${d.games.length} games and ${d.sessions.length} sessions.\n\nOK = merge with your account\nCancel = choose replace instead`);
   if (merge) mergeIn(d);
   else {
     if (!confirm('Replace everything in your account with the backup? This can’t be undone.')) return;
@@ -817,6 +958,7 @@ const dlg = document.getElementById('editor');
 const F = id => document.getElementById(id);
 let editing = null;
 let selected = [];
+let selectedExp = [];
 let scoreDraft = {};
 
 function openEditor(id) {
@@ -825,19 +967,50 @@ function openEditor(id) {
   F('editor-title').textContent = s ? 'Edit session' : 'New session';
   F('editor-delete').hidden = !s;
   F('editor-error').hidden = true;
-  F('f-game').value = s ? s.game : '';
+  F('f-game').value = s ? gameNameOf(s) : '';
   F('f-date').value = s ? s.date : todayISO();
   F('f-low').checked = s ? !!s.lowWins : false;
   F('f-notes').value = s ? (s.notes || '') : '';
   F('f-newplayer').value = '';
+  F('f-newexp').value = '';
+  selectedExp = s ? [...s.expansionIds] : [];
   selected = s ? s.results.map(r => r.playerId).filter(playerById) : [];
   scoreDraft = {};
   if (s) s.results.forEach(r => scoreDraft[r.playerId] = String(r.score));
-  F('game-names').innerHTML = gameNames().map(g => `<option value="${esc(g)}">`).join('');
-  drawPlayerChips(); drawScoreRows();
+  F('game-names').innerHTML = [...db.games].sort((a, b) => a.name.localeCompare(b.name)).map(g => `<option value="${esc(g.name)}">`).join('');
+  drawExpansionChips(); drawPlayerChips(); drawScoreRows();
   dlg.showModal();
   if (!s) setTimeout(() => F('f-game').focus(), 50);
 }
+function drawExpansionChips() {
+  const name = F('f-game').value.trim();
+  F('exp-field').hidden = !name;
+  const exps = [...(gameByName(name)?.expansions || [])].sort((a, b) => a.name.localeCompare(b.name));
+  F('f-exps').innerHTML = exps.length
+    ? exps.map(x => `<button type="button" class="chip" data-xid="${x.id}" aria-pressed="${selectedExp.includes(x.id)}">${esc(x.name)}</button>`).join('')
+    : '<span class="muted">No expansions for this game yet.</span>';
+}
+F('f-exps').addEventListener('click', e => {
+  const chip = e.target.closest('[data-xid]');
+  if (!chip) return;
+  const xid = chip.dataset.xid;
+  selectedExp = selectedExp.includes(xid) ? selectedExp.filter(x => x !== xid) : [...selectedExp, xid];
+  chip.setAttribute('aria-pressed', selectedExp.includes(xid));
+});
+function addExpansionFromEditor() {
+  const name = F('f-newexp').value;
+  if (!name.trim()) return;
+  const g = addGame(F('f-game').value, F('f-low').checked);
+  if (!g) return;
+  const x = addExpansion(g, name);
+  F('f-game').value = g.name;
+  if (!selectedExp.includes(x.id)) selectedExp.push(x.id);
+  F('f-newexp').value = '';
+  drawExpansionChips();
+}
+F('f-addexp').addEventListener('click', addExpansionFromEditor);
+F('f-newexp').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addExpansionFromEditor(); } });
+
 function drawPlayerChips() {
   const sorted = [...db.players].sort((a, b) => a.name.localeCompare(b.name));
   F('f-players').innerHTML = sorted.length
@@ -886,9 +1059,10 @@ function addPlayerFromEditor() {
 }
 F('f-addplayer').addEventListener('click', addPlayerFromEditor);
 F('f-newplayer').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addPlayerFromEditor(); } });
+F('f-game').addEventListener('input', drawExpansionChips);
 F('f-game').addEventListener('change', () => {
-  const g = F('f-game').value.trim();
-  if (g in db.lowWinsGames) F('f-low').checked = db.lowWinsGames[g];
+  const g = gameByName(F('f-game').value);
+  if (g) F('f-low').checked = g.lowWins;
 });
 F('editor-cancel').addEventListener('click', () => dlg.close());
 dlg.addEventListener('close', () => render());
@@ -896,8 +1070,8 @@ dlg.addEventListener('close', () => render());
 F('editor-form').addEventListener('submit', e => {
   e.preventDefault();
   const err = msg => { F('editor-error').textContent = msg; F('editor-error').hidden = false; F('editor-error').scrollIntoView({ block: 'nearest' }); };
-  const game = F('f-game').value.trim();
-  if (!game) return err('Enter the game’s name.');
+  const gameName = F('f-game').value.trim();
+  if (!gameName) return err('Enter the game’s name.');
   if (!selected.length) return err('Choose at least one player.');
   const results = [];
   for (const pid of selected) {
@@ -907,13 +1081,15 @@ F('editor-form').addEventListener('submit', e => {
     results.push({ playerId: pid, score: n });
   }
   const lowWins = F('f-low').checked;
-  const data = { game, date: F('f-date').value || todayISO(), lowWins, results, notes: F('f-notes').value.trim() };
+  const g = addGame(gameName, lowWins);
+  const expansionIds = selectedExp.filter(xid => g.expansions.some(x => x.id === xid));
+  const data = { gameId: g.id, expansionIds, date: F('f-date').value || todayISO(), lowWins, results, notes: F('f-notes').value.trim() };
   const id = editing || newId();
   if (!editing) data.created = Date.now();
   write(setDoc(doc(sessionsCol(), id), data, { merge: true }));
-  if (db.lowWinsGames[game] !== lowWins) {
-    db.lowWinsGames[game] = lowWins;
-    write(setDoc(settingsRef(), { lowWinsGames: { [game]: lowWins } }, { merge: true }));
+  if (g.lowWins !== lowWins) {
+    g.lowWins = lowWins;
+    write(setDoc(doc(gamesCol(), g.id), { lowWins }, { merge: true }));
   }
   const wasEditing = editing;
   dlg.close();
