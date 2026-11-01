@@ -1,5 +1,5 @@
 // Bump this version whenever you change any file, so devices pick up the update.
-const CACHE = 'scores-v4';
+const CACHE = 'scores-v6';
 const FILES = ['./', './index.html', './firebase-config.js', './manifest.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 const SDK_HOST = 'www.gstatic.com'; // Firebase SDK files
 

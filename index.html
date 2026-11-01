@@ -133,22 +133,22 @@ textarea { min-height: 70px; resize: vertical; }
 .muted { color: var(--ink-soft); }
 
 /* ---------- Sessions ---------- */
-.filters { display: flex; gap: 10px; margin-bottom: 18px; }
-.filters select { max-width: 260px; }
+.filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+.filters select { flex: 1 1 150px; max-width: 260px; }
 .month { font-weight: 700; color: var(--ink-soft); margin: 26px 0 10px; font-size: 0.95rem; }
 .month:first-child { margin-top: 0; }
 .grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
 @media (min-width: 640px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1200px) { .grid { grid-template-columns: repeat(3, 1fr); } }
-.session {
+.card {
   background: var(--surface); border-radius: var(--radius-lg); padding: 16px 16px 14px;
   border: 1px solid var(--line); text-align: left; width: 100%;
   display: flex; flex-direction: column; gap: 10px;
 }
-.session .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.session .game { font-weight: 800; font-size: 1.15rem; }
-.session .exps { font-size: 0.85rem; color: var(--ink-soft); margin-top: -6px; }
-.session .date { color: var(--ink-soft); font-size: 0.85rem; white-space: nowrap; }
+.card .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.card .title { font-weight: 800; font-size: 1.15rem; }
+.card .sub { font-size: 0.85rem; color: var(--ink-soft); margin-top: -6px; }
+.card .meta { color: var(--ink-soft); font-size: 0.85rem; white-space: nowrap; }
 .winner {
   display: flex; align-items: center; gap: 10px;
   background: color-mix(in srgb, var(--gold) 18%, transparent);
@@ -156,10 +156,14 @@ textarea { min-height: 70px; resize: vertical; }
 }
 .winner .crown { width: 22px; height: 22px; color: var(--gold); flex: none; }
 .winner .name { font-weight: 800; flex: 1; color: var(--gold-ink); }
+.winner.lost { background: color-mix(in srgb, var(--ink-soft) 14%, transparent); }
+.winner.lost .name { color: var(--ink-soft); }
 .winner .score { font-weight: 800; font-size: 1.5rem; font-variant-numeric: tabular-nums; color: var(--gold-ink); }
 .others { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.92rem; }
 .others span { display: inline-flex; align-items: center; gap: 6px; }
 .others b { font-variant-numeric: tabular-nums; }
+.card .tag { align-self: flex-start; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag { font-size: 0.75rem; font-weight: 700; color: var(--ink-soft); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; }
 
 .fab {
@@ -178,17 +182,17 @@ textarea { min-height: 70px; resize: vertical; }
 .list-item .grow { flex: 1; min-width: 0; }
 .list-item .title { font-weight: 700; }
 .list-item .sub { font-size: 0.85rem; color: var(--ink-soft); }
-.list-item.sub-item { padding-left: 40px; border-top-style: dashed; }
-.list-item.sub-item .title { font-weight: 600; }
 .icon-btn { background: none; border: 0; padding: 8px; border-radius: var(--radius-sm); color: var(--ink-soft); }
 .icon-btn svg { width: 20px; height: 20px; display: block; }
 
 /* ---------- Stats ---------- */
 .stats-wrap { display: grid; gap: 28px; grid-template-columns: 1fr; }
 @media (min-width: 1000px) { .stats-wrap { grid-template-columns: 1fr 1fr; } }
+.stats-wrap section { min-width: 0; }
 .stats-wrap h3 { margin: 0 0 10px; font-size: 1.1rem; }
+.note { margin: -4px 0 10px; color: var(--ink-soft); font-size: 0.85rem; }
 table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
-th, td { padding: 11px 14px; text-align: left; border-top: 1px solid var(--line); }
+th, td { padding: 11px 14px; text-align: left; border-top: 1px solid var(--line); white-space: nowrap; }
 thead th { border-top: 0; font-size: 0.85rem; color: var(--ink-soft); }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .table-scroll { overflow-x: auto; }
@@ -219,6 +223,7 @@ dialog::backdrop { background: rgba(12,15,31,0.55); }
   padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 12px); border-top: 1px solid var(--line);
 }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   border: 1.5px solid var(--line); background: transparent; border-radius: 999px;
@@ -227,15 +232,20 @@ dialog::backdrop { background: rgba(12,15,31,0.55); }
 .chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--surface); }
 .toggle { display: flex; align-items: center; gap: 10px; font-weight: 600; margin-bottom: 16px; }
 .toggle input { width: 22px; height: 22px; accent-color: var(--gold); }
-.score-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.score-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
 .score-row:first-child { border-top: 0; }
 .score-row .pname { flex: 1; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.score-row input {
+.score-row input[data-score] {
   width: 96px; text-align: right; padding: 10px 12px; font-size: 1.2rem; font-weight: 700;
   border-radius: var(--radius-sm); border: 1.5px solid var(--line); background: var(--bg);
   font-variant-numeric: tabular-nums;
 }
+.score-row .faction { flex-basis: 100%; padding: 8px 12px; background: var(--bg); }
 .score-row .sign { width: 40px; height: 44px; border-radius: var(--radius-sm); border: 1.5px solid var(--line); background: transparent; font-weight: 800; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pills span { font-size: 0.85rem; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+.exp-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.exp-row .used { font-size: 0.85rem; color: var(--ink-soft); white-space: nowrap; }
 .inline-add { display: flex; gap: 8px; margin-top: 10px; }
 .error { color: var(--danger); font-weight: 600; margin: 0 0 12px; }
 
@@ -344,7 +354,8 @@ dialog::backdrop { background: rgba(12,15,31,0.55); }
           <input type="date" id="f-date">
         </div>
       </div>
-      <label class="toggle"><input type="checkbox" id="f-low"> Lowest score wins</label>
+      <label class="toggle"><input type="checkbox" id="f-coop"> Co-op game</label>
+      <label class="toggle" id="f-low-wrap"><input type="checkbox" id="f-low"> Lowest score wins</label>
 
       <div class="field" id="exp-field" hidden>
         <span class="label">Expansions used</span>
@@ -364,9 +375,23 @@ dialog::backdrop { background: rgba(12,15,31,0.55); }
         </div>
       </div>
 
+      <div class="field" id="coop-field" hidden>
+        <span class="label">Result</span>
+        <div class="chips" id="f-result">
+          <button type="button" class="chip" data-won="true">We won</button>
+          <button type="button" class="chip" data-won="false">We lost</button>
+        </div>
+      </div>
+
       <div class="field" id="scores-field" hidden>
-        <span class="label">Final scores</span>
+        <span class="label" id="scores-label">Final scores</span>
         <div id="f-scores"></div>
+        <datalist id="faction-names"></datalist>
+      </div>
+
+      <div class="field" id="first-field" hidden>
+        <label for="f-first">Who went first? (optional)</label>
+        <select id="f-first"></select>
       </div>
 
       <div class="field">
@@ -378,6 +403,52 @@ dialog::backdrop { background: rgba(12,15,31,0.55); }
       <button type="button" class="btn danger" id="editor-delete" hidden>Delete</button>
       <span></span>
       <button type="submit" class="btn" id="editor-save">Save session</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="game-editor" aria-labelledby="game-title">
+  <form class="sheet" id="game-form">
+    <div class="sheet-head">
+      <h2 id="game-title">New game</h2>
+      <button type="button" class="btn ghost small" id="game-cancel">Cancel</button>
+    </div>
+    <div class="sheet-body">
+      <p class="error" id="game-error" hidden></p>
+      <div class="field">
+        <label for="g-name">Name</label>
+        <input type="text" id="g-name" autocomplete="off" placeholder="e.g. Catan">
+      </div>
+      <div class="three">
+        <div class="field">
+          <label for="g-min">Min players</label>
+          <input type="text" inputmode="numeric" id="g-min" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="g-max">Max players</label>
+          <input type="text" inputmode="numeric" id="g-max" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="g-time">Minutes</label>
+          <input type="text" inputmode="numeric" id="g-time" autocomplete="off">
+        </div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="g-coop"> Co-op: everyone wins or loses together</label>
+      <label class="toggle" id="g-low-wrap"><input type="checkbox" id="g-low"> Lowest score wins</label>
+      <label class="toggle"><input type="checkbox" id="g-factions"> Track factions or characters</label>
+      <div class="field">
+        <span class="label">Expansions</span>
+        <div id="g-exps"></div>
+        <div class="inline-add">
+          <input type="text" id="g-newexp" placeholder="Add an expansion" autocomplete="off">
+          <button type="button" class="btn ghost small" id="g-addexp">Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="btn danger" id="game-delete" hidden>Delete</button>
+      <span></span>
+      <button type="submit" class="btn">Save game</button>
     </div>
   </form>
 </dialog>
@@ -451,7 +522,7 @@ function onSyncError(err) {
 }
 
 function afterSnapshot() {
-  if (!dlg.open) render();
+  if (!dlg.open && !gameDlg.open) render();
 }
 
 /* =========================================================
@@ -481,12 +552,12 @@ function expansionNames(s) {
   return s.expansionIds.map(id => exps.find(x => x.id === id)?.name).filter(Boolean);
 }
 
-function addGame(name, lowWins = false) {
+function addGame(name, props = {}) {
   name = name.trim();
   if (!name) return null;
   const existing = gameByName(name);
   if (existing) return existing;
-  const g = { id: newId(), name, lowWins, expansions: [] };
+  const g = { id: newId(), name, lowWins: false, coop: false, factions: false, expansions: [], ...props };
   db.games.push(g);
   write(setDoc(doc(gamesCol(), g.id), stripId(g)));
   return g;
@@ -503,7 +574,7 @@ function addExpansion(g, name) {
 }
 
 function winnersOf(s) {
-  if (!s.results?.length) return [];
+  if (s.coop || !s.results?.length) return [];
   const scores = s.results.map(r => r.score);
   const best = s.lowWins ? Math.min(...scores) : Math.max(...scores);
   return s.results.filter(r => r.score === best).map(r => r.playerId);
@@ -511,6 +582,9 @@ function winnersOf(s) {
 function sortedResults(s) {
   return [...(s.results || [])].sort((a, b) => s.lowWins ? a.score - b.score : b.score - a.score);
 }
+const lastPlayed = g => sessionsOfGame(g.id).reduce((last, s) => s.date > last ? s.date : last, '');
+const shortDate = iso => new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+const pct = x => `${Math.round(x * 100)}%`;
 function playedGames() {
   return db.games.filter(g => sessionsOfGame(g.id).length).sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -606,6 +680,7 @@ if (!configured) {
    ========================================================= */
 let currentView = 'sessions';
 let gameFilter = '';
+let pickPlayers = '', pickTime = '', gameSort = 'name';
 const main = document.getElementById('main');
 
 document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => show(b.dataset.view)));
@@ -630,7 +705,6 @@ function render() {
 
 const crownSVG = '<svg class="crown" viewBox="0 0 24 24" fill="currentColor"><path d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5L3 7z"/></svg>';
 const editSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
-const plusSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
 const trashSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>';
 
 /* =========================================================
@@ -666,22 +740,13 @@ function renderSessions() {
       html += `<div class="month">${esc(month)}</div><div class="grid">`;
       open = true; lastMonth = month;
     }
-    const wins = winnersOf(s);
-    const res = sortedResults(s);
-    const winnerNames = wins.map(id => playerById(id)?.name || 'Unknown').join(' & ');
-    const winScore = res[0]?.score ?? '';
-    const others = res.filter(r => !wins.includes(r.playerId));
     const exps = expansionNames(s);
-    html += `<button class="session" data-edit="${s.id}">
-      <div class="row1"><span class="game">${esc(gameNameOf(s))}</span>
-        <span class="date">${d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span></div>
-      ${exps.length ? `<div class="exps">+ ${esc(exps.join(', '))}</div>` : ''}
-      <div class="winner">${crownSVG}<span class="name">${esc(winnerNames)}${wins.length > 1 ? ' (tie)' : ''}</span><span class="score">${esc(winScore)}</span></div>
-      ${others.length ? `<div class="others">${others.map(r => {
-        const p = playerById(r.playerId);
-        return `<span><i class="dot" style="background:${p?.color || '#999'}"></i>${esc(p?.name || 'Unknown')} <b>${r.score}</b></span>`;
-      }).join('')}</div>` : ''}
-      ${s.lowWins ? '<span class="tag" style="align-self:flex-start">Lowest wins</span>' : ''}
+    html += `<button class="card" data-edit="${s.id}">
+      <div class="row1"><span class="title">${esc(gameNameOf(s))}</span>
+        <span class="meta">${d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span></div>
+      ${exps.length ? `<div class="sub">+ ${esc(exps.join(', '))}</div>` : ''}
+      ${s.coop ? coopResult(s) : competitiveResult(s)}
+      ${s.lowWins ? '<span class="tag">Lowest wins</span>' : ''}
     </button>`;
   });
   if (open) html += '</div>';
@@ -689,18 +754,34 @@ function renderSessions() {
   document.getElementById('game-filter').addEventListener('change', e => { gameFilter = e.target.value; renderSessions(); });
 }
 
+function playerLabel(r) {
+  return esc(playerById(r.playerId)?.name || 'Unknown') + (r.faction ? ` <small class="muted">(${esc(r.faction)})</small>` : '');
+}
+function playerTag(r) {
+  return `<span><i class="dot" style="background:${playerById(r.playerId)?.color || '#999'}"></i>${playerLabel(r)}${'score' in r ? ` <b>${r.score}</b>` : ''}</span>`;
+}
+function competitiveResult(s) {
+  const wins = winnersOf(s);
+  const res = sortedResults(s);
+  const others = res.filter(r => !wins.includes(r.playerId));
+  return `<div class="winner">${crownSVG}<span class="name">${res.filter(r => wins.includes(r.playerId)).map(playerLabel).join(' & ')}${wins.length > 1 ? ' (tie)' : ''}</span><span class="score">${esc(res[0]?.score ?? '')}</span></div>
+    ${others.length ? `<div class="others">${others.map(playerTag).join('')}</div>` : ''}`;
+}
+function coopResult(s) {
+  return `<div class="winner${s.won ? '' : ' lost'}">${s.won ? crownSVG : ''}<span class="name">${s.won ? 'Won together' : 'Lost together'}</span></div>
+    <div class="others">${s.results.map(playerTag).join('')}</div>`;
+}
+
 main.addEventListener('click', e => {
   const editBtn = e.target.closest('[data-edit]');
   if (editBtn) return openEditor(editBtn.dataset.edit);
+  const gameBtn = e.target.closest('[data-game]');
+  if (gameBtn) return openGameEditor(gameBtn.dataset.game);
   const act = e.target.closest('[data-action]');
   if (!act) return;
   const a = act.dataset.action;
   if (a === 'new') openEditor();
-  if (a === 'add-expansion') addExpansionFromList(act.dataset.id);
-  if (a === 'rename-game') renameGame(act.dataset.id);
-  if (a === 'delete-game') deleteGame(act.dataset.id);
-  if (a === 'rename-expansion') renameExpansion(act.dataset.id, act.dataset.exp);
-  if (a === 'delete-expansion') deleteExpansion(act.dataset.id, act.dataset.exp);
+  if (a === 'new-game') openGameEditor();
   if (a === 'rename-player') renamePlayer(act.dataset.id);
   if (a === 'delete-player') deletePlayer(act.dataset.id);
   if (a === 'export') exportData();
@@ -713,99 +794,39 @@ document.getElementById('fab').addEventListener('click', () => openEditor());
    Games view
    ========================================================= */
 function renderGames() {
-  let html = `<div class="view-head"><h2>Games</h2></div>
-    <form class="add-row" id="add-game-form">
-      <input type="text" id="new-game" placeholder="Game name" autocomplete="off" aria-label="Game name">
-      <button class="btn" type="submit">Add game</button>
-    </form>`;
+  let html = `<div class="view-head"><h2>Games</h2>
+    <button class="btn" data-action="new-game">New game</button></div>`;
   if (!db.games.length) {
-    html += `<div class="empty"><p>Add the games you own, then add their expansions. Games you type in a new session are added here too.</p></div>`;
-  } else {
-    const sorted = [...db.games].sort((a, b) => a.name.localeCompare(b.name));
-    html += `<div class="list">${sorted.map(g => {
-      const played = sessionsOfGame(g.id);
-      const exps = [...g.expansions].sort((a, b) => a.name.localeCompare(b.name));
-      return `<div class="list-item">
-        <div class="grow"><div class="title">${esc(g.name)}</div>
-          <div class="sub">${played.length} played${g.lowWins ? ', lowest score wins' : ''}</div></div>
-        <button class="icon-btn" data-action="add-expansion" data-id="${g.id}" aria-label="Add expansion to ${esc(g.name)}" title="Add expansion">${plusSVG}</button>
-        <button class="icon-btn" data-action="rename-game" data-id="${g.id}" aria-label="Rename ${esc(g.name)}">${editSVG}</button>
-        <button class="icon-btn" data-action="delete-game" data-id="${g.id}" aria-label="Delete ${esc(g.name)}">${trashSVG}</button>
-      </div>${exps.map(x => {
-        const n = played.filter(s => s.expansionIds.includes(x.id)).length;
-        return `<div class="list-item sub-item">
-          <div class="grow"><div class="title">${esc(x.name)}</div>
-            <div class="sub">Expansion, used ${n} time${n === 1 ? '' : 's'}</div></div>
-          <button class="icon-btn" data-action="rename-expansion" data-id="${g.id}" data-exp="${x.id}" aria-label="Rename ${esc(x.name)}">${editSVG}</button>
-          <button class="icon-btn" data-action="delete-expansion" data-id="${g.id}" data-exp="${x.id}" aria-label="Delete ${esc(x.name)}">${trashSVG}</button>
-        </div>`;
-      }).join('')}`;
-    }).join('')}</div>`;
+    main.innerHTML = html + `<div class="empty"><p>Add the games you own and their expansions. Games you type in a new session are added here too.</p></div>`;
+    return;
   }
+  const option = (value, label, current) => `<option value="${value}"${String(value) === current ? ' selected' : ''}>${label}</option>`;
+  html += `<div class="filters">
+    <select id="pick-players" aria-label="Number of players">${option('', 'Any players', pickPlayers)}${[1, 2, 3, 4, 5, 6, 7, 8].map(n => option(n, `${n} player${n > 1 ? 's' : ''}`, pickPlayers)).join('')}</select>
+    <select id="pick-time" aria-label="Time available">${option('', 'Any length', pickTime)}${[30, 45, 60, 90, 120, 180].map(m => option(m, `Up to ${m} min`, pickTime)).join('')}</select>
+    <select id="game-sort" aria-label="Sort games">${option('name', 'A to Z', gameSort)}${option('stale', 'Least recently played', gameSort)}</select>
+  </div>`;
+  const n = Number(pickPlayers), t = Number(pickTime);
+  const list = db.games
+    .filter(g => !n || (g.minPlayers <= n && n <= g.maxPlayers))
+    .filter(g => !t || (g.playTime && g.playTime <= t))
+    .map(g => ({ g, last: lastPlayed(g), played: sessionsOfGame(g.id).length }))
+    .sort((a, b) => (gameSort === 'stale' && a.last.localeCompare(b.last)) || a.g.name.localeCompare(b.g.name));
+  html += list.length ? `<div class="grid">${list.map(({ g, last, played }) => {
+    const players = g.minPlayers && (g.minPlayers === g.maxPlayers ? g.minPlayers : `${g.minPlayers}–${g.maxPlayers}`);
+    const info = [players && `${players} player${g.maxPlayers > 1 ? 's' : ''}`, g.playTime && `${g.playTime} min`, last && `last played ${shortDate(last)}`].filter(Boolean).join(' · ');
+    const tags = [g.coop && 'Co-op', g.lowWins && 'Lowest wins', g.factions && 'Factions'].filter(Boolean);
+    return `<button class="card" data-game="${g.id}">
+      <div class="row1"><span class="title">${esc(g.name)}</span><span class="meta">${played ? `${played} played` : 'Never played'}</span></div>
+      ${info ? `<div class="sub">${info}</div>` : ''}
+      ${g.expansions.length ? `<div class="pills">${g.expansions.map(x => `<span>${esc(x.name)}</span>`).join('')}</div>` : ''}
+      ${tags.length ? `<div class="tags">${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>` : ''}
+    </button>`;
+  }).join('')}</div>`
+    : `<div class="empty"><p>No games match. Add player counts and play times to your games to use these filters.</p></div>`;
   main.innerHTML = html;
-  document.getElementById('add-game-form').addEventListener('submit', e => {
-    e.preventDefault();
-    const input = document.getElementById('new-game');
-    if (!input.value.trim()) return;
-    const before = db.games.length;
-    const g = addGame(input.value);
-    toast(db.games.length > before ? `Added ${g.name}` : `${g.name} is already a game`);
-    renderGames();
-    document.getElementById('new-game').focus();
-  });
-}
-function addExpansionFromList(id) {
-  const g = gameById(id);
-  const name = prompt(`New expansion for ${g.name}`);
-  if (!name || !name.trim()) return;
-  const before = g.expansions.length;
-  const x = addExpansion(g, name);
-  toast(g.expansions.length > before ? `Added ${x.name}` : `${g.name} already has ${x.name}`);
-  render();
-}
-function renameGame(id) {
-  const g = gameById(id);
-  const name = prompt('Rename game', g.name)?.trim();
-  if (!name || name === g.name) return;
-  const other = gameByName(name);
-  if (other && other !== g) return toast(`${other.name} already exists`);
-  g.name = name;
-  write(setDoc(doc(gamesCol(), id), { name }, { merge: true }));
-  render();
-}
-function deleteGame(id) {
-  const g = gameById(id);
-  const n = sessionsOfGame(id).length;
-  if (n) return alert(`${g.name} is used in ${n} session${n > 1 ? 's' : ''}. Delete those sessions first.`);
-  if (!confirm(`Delete ${g.name}?`)) return;
-  write(deleteDoc(doc(gamesCol(), id)));
-  toast(`Deleted ${g.name}`);
-}
-function renameExpansion(id, xid) {
-  const g = gameById(id);
-  const x = g.expansions.find(e => e.id === xid);
-  const name = prompt('Rename expansion', x.name)?.trim();
-  if (!name) return;
-  x.name = name;
-  write(setDoc(doc(gamesCol(), id), { expansions: g.expansions }, { merge: true }));
-  render();
-}
-function deleteExpansion(id, xid) {
-  const g = gameById(id);
-  const x = g.expansions.find(e => e.id === xid);
-  const affected = db.sessions.filter(s => s.expansionIds.includes(xid));
-  const msg = affected.length
-    ? `Delete ${x.name}? It will be removed from ${affected.length} session${affected.length > 1 ? 's' : ''} (their scores stay).`
-    : `Delete ${x.name}?`;
-  if (!confirm(msg)) return;
-  const expansions = g.expansions.filter(e => e.id !== xid);
-  const ops = [b => b.set(doc(gamesCol(), id), { expansions }, { merge: true })];
-  affected.forEach(s => {
-    const expansionIds = s.expansionIds.filter(e => e !== xid);
-    ops.push(b => b.set(doc(sessionsCol(), s.id), { expansionIds }, { merge: true }));
-  });
-  runBatched(ops);
-  toast(`Deleted ${x.name}`);
+  [['pick-players', v => pickPlayers = v], ['pick-time', v => pickTime = v], ['game-sort', v => gameSort = v]].forEach(([id, set]) =>
+    document.getElementById(id).addEventListener('change', e => { set(e.target.value); renderGames(); }));
 }
 
 /* =========================================================
@@ -874,39 +895,110 @@ function deletePlayer(id) {
 /* =========================================================
    Stats view
    ========================================================= */
+const num = label => ({ label, num: true });
+function statTable(title, cols, rows, note = '') {
+  if (!rows.length) return '';
+  const cls = i => cols[i].num ? ' class="num"' : '';
+  return `<section><h3>${title}</h3>${note ? `<p class="note">${note}</p>` : ''}<div class="table-scroll"><table>
+    <thead><tr>${cols.map((c, i) => `<th${cls(i)}>${c.label ?? c}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r => `<tr>${r.map((cell, i) => `<td${cls(i)}>${cell}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table></div></section>`;
+}
+
 function renderStats() {
   let html = `<div class="view-head"><h2>Stats</h2></div>`;
   if (!db.sessions.length) {
     html += `<div class="empty"><p>Stats appear once you’ve logged a session.</p></div>`;
   } else {
+    const competitive = db.sessions.filter(s => !s.coop)
+      .sort((a, b) => a.date.localeCompare(b.date) || (a.created || 0) - (b.created || 0));
+    const playerCell = p => `<i class="dot" style="background:${p.color};margin-right:8px"></i>${esc(p.name)}`;
+
     const pRows = db.players.map(p => {
-      const played = db.sessions.filter(s => s.results.some(r => r.playerId === p.id)).length;
-      const won = db.sessions.filter(s => winnersOf(s).includes(p.id)).length;
-      return { p, played, won, rate: played ? won / played : 0 };
-    }).filter(r => r.played).sort((a, b) => b.won - a.won || b.rate - a.rate);
+      const mine = competitive.filter(s => s.results.some(r => r.playerId === p.id));
+      let won = 0, streak = 0, best = 0;
+      mine.forEach(s => {
+        if (winnersOf(s).includes(p.id)) { won++; streak++; best = Math.max(best, streak); }
+        else streak = 0;
+      });
+      return { p, played: mine.length, won, streak, best };
+    }).filter(r => r.played).sort((a, b) => b.won - a.won || b.won / b.played - a.won / a.played);
+
+    const scoreOf = (s, id) => s.results.find(r => r.playerId === id)?.score;
+    const beats = (s, a, b) => {
+      const x = scoreOf(s, a), y = scoreOf(s, b);
+      return x !== undefined && y !== undefined && x !== y && (s.lowWins ? x < y : x > y);
+    };
+    const rivals = pRows.map(r => r.p);
+    const h2hRows = rivals.length > 1 ? rivals.map(a => [playerCell(a), ...rivals.map(b => {
+      if (a === b) return '–';
+      const w = competitive.filter(s => beats(s, a.id, b.id)).length;
+      const l = competitive.filter(s => beats(s, b.id, a.id)).length;
+      return w || l ? `${w}–${l}` : '';
+    })]) : [];
 
     const gRows = playedGames().map(g => {
       const ss = sessionsOfGame(g.id);
+      const comp = ss.filter(s => !s.coop), coop = ss.filter(s => s.coop);
       const tally = {};
-      ss.forEach(s => winnersOf(s).forEach(id => tally[id] = (tally[id] || 0) + 1));
-      const topN = Math.max(0, ...Object.values(tally));
-      const champs = Object.keys(tally).filter(id => tally[id] === topN).map(id => playerById(id)?.name).filter(Boolean);
-      const low = ss.some(s => s.lowWins);
-      const all = ss.flatMap(s => s.results);
-      const bestR = [...all].sort((a, b) => low ? a.score - b.score : b.score - a.score)[0];
-      return { g: g.name, n: ss.length, champs: champs.join(', '), best: bestR ? `${bestR.score} (${playerById(bestR.playerId)?.name || '?'})` : '' };
-    }).sort((a, b) => b.n - a.n);
+      comp.forEach(s => winnersOf(s).forEach(id => tally[id] = (tally[id] || 0) + 1));
+      const top = Math.max(0, ...Object.values(tally));
+      const champs = Object.keys(tally).filter(id => tally[id] === top).map(id => playerById(id)?.name).filter(Boolean);
+      const teamWins = coop.filter(s => s.won).length;
+      if (coop.length) champs.push(`Team ${teamWins}–${coop.length - teamWins}`);
+      const low = comp.some(s => s.lowWins);
+      const bestR = comp.flatMap(s => s.results).sort((a, b) => low ? a.score - b.score : b.score - a.score)[0];
+      return [esc(g.name), ss.length, esc(champs.join(', ')), bestR ? `${bestR.score} (${esc(playerById(bestR.playerId)?.name || '?')})` : ''];
+    }).sort((a, b) => b[1] - a[1]);
+
+    const fTally = {};
+    db.sessions.forEach(s => {
+      const wins = winnersOf(s);
+      s.results.filter(r => r.faction).forEach(r => {
+        const t = fTally[`${s.gameId}/${r.faction.toLowerCase()}`] ??= { game: gameNameOf(s), faction: r.faction, played: 0, won: 0 };
+        t.played++;
+        if (s.coop ? s.won : wins.includes(r.playerId)) t.won++;
+      });
+    });
+    const fRows = Object.values(fTally)
+      .sort((a, b) => a.game.localeCompare(b.game) || b.won / b.played - a.won / a.played)
+      .map(t => [esc(t.game), esc(t.faction), t.played, t.won, pct(t.won / t.played)]);
+
+    const outcome = list => {
+      if (!list.length) return '–';
+      if (list.every(s => s.coop)) return `${pct(list.filter(s => s.won).length / list.length)} won`;
+      const comp = list.filter(s => !s.coop && s.results.length);
+      return comp.length ? `avg ${Math.round(comp.reduce((sum, s) => sum + sortedResults(s)[0].score, 0) / comp.length * 10) / 10}` : '–';
+    };
+    const xRows = playedGames().flatMap(g => {
+      const ss = sessionsOfGame(g.id);
+      return g.expansions.map(x => {
+        const withX = ss.filter(s => s.expansionIds.includes(x.id));
+        return withX.length && [esc(g.name), esc(x.name), withX.length, outcome(withX), outcome(ss.filter(s => !withX.includes(s)))];
+      }).filter(Boolean);
+    });
+
+    const firsts = competitive.filter(s => s.firstPlayerId && s.results.length > 1 && s.results.some(r => r.playerId === s.firstPlayerId));
+    const firstRow = (label, list) => [label, list.length,
+      pct(list.filter(s => winnersOf(s).includes(s.firstPlayerId)).length / list.length),
+      pct(list.reduce((sum, s) => sum + 1 / s.results.length, 0) / list.length)];
+    const firstRows = firsts.length ? [firstRow('All games', firsts), ...playedGames()
+      .map(g => [g, firsts.filter(s => s.gameId === g.id)])
+      .filter(([, list]) => list.length)
+      .map(([g, list]) => firstRow(esc(g.name), list))] : [];
 
     html += `<div class="stats-wrap">
-      <section><h3>Players</h3><div class="table-scroll"><table>
-        <thead><tr><th>Player</th><th class="num">Played</th><th class="num">Wins</th><th class="num">Win rate</th></tr></thead>
-        <tbody>${pRows.map(r => `<tr><td><i class="dot" style="background:${r.p.color};margin-right:8px"></i>${esc(r.p.name)}</td>
-          <td class="num">${r.played}</td><td class="num">${r.won}</td><td class="num">${Math.round(r.rate * 100)}%</td></tr>`).join('')}</tbody>
-      </table></div></section>
-      <section><h3>Games</h3><div class="table-scroll"><table>
-        <thead><tr><th>Game</th><th class="num">Played</th><th>Most wins</th><th>Best score</th></tr></thead>
-        <tbody>${gRows.map(r => `<tr><td>${esc(r.g)}</td><td class="num">${r.n}</td><td>${esc(r.champs)}</td><td>${esc(r.best)}</td></tr>`).join('')}</tbody>
-      </table></div></section>
+      ${statTable('Players', ['Player', num('Played'), num('Wins'), num('Win rate'), num('Streak'), num('Best')],
+        pRows.map(r => [playerCell(r.p), r.played, r.won, pct(r.won / r.played), r.streak, r.best]),
+        'Competitive games only. Streaks count wins in a row, ties included.')}
+      ${statTable('Games', ['Game', num('Played'), 'Most wins', 'Best score'], gRows)}
+      ${statTable('Head to head', ['', ...rivals.map(p => num(esc(p.name)))], h2hRows,
+        'Wins–losses for each row’s player against each column’s player, in games they both played.')}
+      ${statTable('Factions and characters', ['Game', 'Faction', num('Played'), num('Wins'), num('Win rate')], fRows)}
+      ${statTable('Expansions', ['Game', 'Expansion', num('Played'), num('With'), num('Without')], xRows,
+        'Average winning score with and without each expansion, or team win rate for co-op games.')}
+      ${statTable('Going first', ['Game', num('Sessions'), num('First player won'), num('Fair share')], firstRows,
+        'How often the first player won, against what you’d expect if going first made no difference.')}
     </div>`;
   }
   html += `<section class="data-box"><h3>Account</h3>
@@ -960,6 +1052,10 @@ let editing = null;
 let selected = [];
 let selectedExp = [];
 let scoreDraft = {};
+let factionDraft = {};
+let firstPlayer = '';
+let coopWon = true;
+const editorGame = () => gameByName(F('f-game').value);
 
 function openEditor(id) {
   editing = id || null;
@@ -969,16 +1065,23 @@ function openEditor(id) {
   F('editor-error').hidden = true;
   F('f-game').value = s ? gameNameOf(s) : '';
   F('f-date').value = s ? s.date : todayISO();
-  F('f-low').checked = s ? !!s.lowWins : false;
+  F('f-low').checked = !!s?.lowWins;
+  F('f-coop').checked = !!s?.coop;
+  coopWon = s?.coop ? s.won : true;
+  firstPlayer = s?.firstPlayerId || '';
   F('f-notes').value = s ? (s.notes || '') : '';
   F('f-newplayer').value = '';
   F('f-newexp').value = '';
   selectedExp = s ? [...s.expansionIds] : [];
   selected = s ? s.results.map(r => r.playerId).filter(playerById) : [];
   scoreDraft = {};
-  if (s) s.results.forEach(r => scoreDraft[r.playerId] = String(r.score));
+  factionDraft = {};
+  s?.results.forEach(r => {
+    if ('score' in r) scoreDraft[r.playerId] = String(r.score);
+    if (r.faction) factionDraft[r.playerId] = r.faction;
+  });
   F('game-names').innerHTML = [...db.games].sort((a, b) => a.name.localeCompare(b.name)).map(g => `<option value="${esc(g.name)}">`).join('');
-  drawExpansionChips(); drawPlayerChips(); drawScoreRows();
+  drawExpansionChips(); drawPlayerChips(); drawMode();
   dlg.showModal();
   if (!s) setTimeout(() => F('f-game').focus(), 50);
 }
@@ -1000,7 +1103,7 @@ F('f-exps').addEventListener('click', e => {
 function addExpansionFromEditor() {
   const name = F('f-newexp').value;
   if (!name.trim()) return;
-  const g = addGame(F('f-game').value, F('f-low').checked);
+  const g = addGame(F('f-game').value, { lowWins: F('f-low').checked, coop: F('f-coop').checked });
   if (!g) return;
   const x = addExpansion(g, name);
   F('f-game').value = g.name;
@@ -1018,17 +1121,44 @@ function drawPlayerChips() {
         <i class="dot" style="background:${p.color}"></i>${esc(p.name)}</button>`).join('')
     : '<span class="muted">No players yet. Add one below.</span>';
 }
+function drawMode() {
+  const coop = F('f-coop').checked;
+  F('f-low-wrap').hidden = coop;
+  F('coop-field').hidden = !coop;
+  F('f-result').querySelectorAll('[data-won]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.won === String(coopWon))));
+  drawScoreRows();
+}
 function drawScoreRows() {
-  F('scores-field').hidden = !selected.length;
+  const coop = F('f-coop').checked;
+  const g = editorGame();
+  const factions = !!g?.factions;
+  F('scores-field').hidden = !selected.length || (coop && !factions);
+  F('scores-label').textContent = coop ? 'Factions or characters' : 'Final scores';
+  F('faction-names').innerHTML = factions
+    ? [...new Set(sessionsOfGame(g.id).flatMap(s => s.results.map(r => r.faction)).filter(Boolean))].sort().map(f => `<option value="${esc(f)}">`).join('')
+    : '';
   F('f-scores').innerHTML = selected.map(pid => {
     const p = playerById(pid);
     return `<div class="score-row">
       <span class="pname"><i class="dot" style="background:${p.color}"></i>${esc(p.name)}</span>
-      <button type="button" class="sign" data-sign="${pid}" aria-label="Make ${esc(p.name)}’s score negative or positive">±</button>
-      <input type="text" inputmode="decimal" data-score="${pid}" value="${esc(scoreDraft[pid] ?? '')}" placeholder="0" aria-label="${esc(p.name)} final score">
+      ${coop ? '' : `<button type="button" class="sign" data-sign="${pid}" aria-label="Make ${esc(p.name)}’s score negative or positive">±</button>
+      <input type="text" inputmode="decimal" data-score="${pid}" value="${esc(scoreDraft[pid] ?? '')}" placeholder="0" aria-label="${esc(p.name)} final score">`}
+      ${factions ? `<input type="text" class="faction" data-faction="${pid}" list="faction-names" value="${esc(factionDraft[pid] ?? '')}" placeholder="Faction or character" autocomplete="off" aria-label="${esc(p.name)} faction or character">` : ''}
     </div>`;
   }).join('');
+  if (!selected.includes(firstPlayer)) firstPlayer = '';
+  F('first-field').hidden = coop || selected.length < 2;
+  F('f-first').innerHTML = '<option value="">Not recorded</option>' +
+    selected.map(pid => `<option value="${pid}"${pid === firstPlayer ? ' selected' : ''}>${esc(playerById(pid).name)}</option>`).join('');
 }
+F('f-coop').addEventListener('change', drawMode);
+F('f-result').addEventListener('click', e => {
+  const b = e.target.closest('[data-won]');
+  if (!b) return;
+  coopWon = b.dataset.won === 'true';
+  drawMode();
+});
+F('f-first').addEventListener('change', e => { firstPlayer = e.target.value; });
 F('f-players').addEventListener('click', e => {
   const chip = e.target.closest('[data-pid]');
   if (!chip) return;
@@ -1039,6 +1169,7 @@ F('f-players').addEventListener('click', e => {
 });
 F('f-scores').addEventListener('input', e => {
   if (e.target.dataset.score) scoreDraft[e.target.dataset.score] = e.target.value;
+  if (e.target.dataset.faction) factionDraft[e.target.dataset.faction] = e.target.value;
 });
 F('f-scores').addEventListener('click', e => {
   const b = e.target.closest('[data-sign]');
@@ -1059,10 +1190,14 @@ function addPlayerFromEditor() {
 }
 F('f-addplayer').addEventListener('click', addPlayerFromEditor);
 F('f-newplayer').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addPlayerFromEditor(); } });
-F('f-game').addEventListener('input', drawExpansionChips);
+F('f-game').addEventListener('input', () => { drawExpansionChips(); drawScoreRows(); });
 F('f-game').addEventListener('change', () => {
-  const g = gameByName(F('f-game').value);
-  if (g) F('f-low').checked = g.lowWins;
+  const g = editorGame();
+  if (g) {
+    F('f-low').checked = g.lowWins;
+    F('f-coop').checked = !!g.coop;
+  }
+  drawMode();
 });
 F('editor-cancel').addEventListener('click', () => dlg.close());
 dlg.addEventListener('close', () => render());
@@ -1073,23 +1208,37 @@ F('editor-form').addEventListener('submit', e => {
   const gameName = F('f-game').value.trim();
   if (!gameName) return err('Enter the game’s name.');
   if (!selected.length) return err('Choose at least one player.');
+  const coop = F('f-coop').checked;
+  const factions = !!editorGame()?.factions;
   const results = [];
   for (const pid of selected) {
-    const raw = (scoreDraft[pid] ?? '').trim();
-    const n = Number(raw);
-    if (raw === '' || raw === '-' || !isFinite(n)) return err(`Enter a final score for ${playerById(pid).name}.`);
-    results.push({ playerId: pid, score: n });
+    const r = { playerId: pid };
+    if (!coop) {
+      const raw = (scoreDraft[pid] ?? '').trim();
+      r.score = Number(raw);
+      if (raw === '' || raw === '-' || !isFinite(r.score)) return err(`Enter a final score for ${playerById(pid).name}.`);
+    }
+    const faction = (factionDraft[pid] ?? '').trim();
+    if (factions && faction) r.faction = faction;
+    results.push(r);
   }
-  const lowWins = F('f-low').checked;
-  const g = addGame(gameName, lowWins);
-  const expansionIds = selectedExp.filter(xid => g.expansions.some(x => x.id === xid));
-  const data = { gameId: g.id, expansionIds, date: F('f-date').value || todayISO(), lowWins, results, notes: F('f-notes').value.trim() };
-  const id = editing || newId();
-  if (!editing) data.created = Date.now();
-  write(setDoc(doc(sessionsCol(), id), data, { merge: true }));
-  if (g.lowWins !== lowWins) {
-    g.lowWins = lowWins;
-    write(setDoc(doc(gamesCol(), g.id), { lowWins }, { merge: true }));
+  const lowWins = !coop && F('f-low').checked;
+  const g = addGame(gameName, { lowWins, coop });
+  const previous = db.sessions.find(x => x.id === editing);
+  const data = {
+    gameId: g.id,
+    expansionIds: selectedExp.filter(xid => g.expansions.some(x => x.id === xid)),
+    date: F('f-date').value || todayISO(),
+    coop, lowWins, results,
+    notes: F('f-notes').value.trim(),
+    created: previous?.created ?? Date.now()
+  };
+  if (coop) data.won = coopWon;
+  else if (firstPlayer) data.firstPlayerId = firstPlayer;
+  write(setDoc(doc(sessionsCol(), editing || newId()), data));
+  if (g.lowWins !== lowWins || !!g.coop !== coop) {
+    Object.assign(g, { lowWins, coop });
+    write(setDoc(doc(gamesCol(), g.id), { lowWins, coop }, { merge: true }));
   }
   const wasEditing = editing;
   dlg.close();
@@ -1100,6 +1249,113 @@ F('editor-delete').addEventListener('click', () => {
   if (!editing || !confirm('Delete this session?')) return;
   write(deleteDoc(doc(sessionsCol(), editing)));
   dlg.close(); toast('Session deleted');
+});
+
+/* =========================================================
+   Game editor
+   ========================================================= */
+const gameDlg = document.getElementById('game-editor');
+let editingGame = null;
+let expDraft = [];
+
+function openGameEditor(id) {
+  editingGame = id ? gameById(id) : null;
+  F('game-title').textContent = editingGame ? 'Edit game' : 'New game';
+  F('game-delete').hidden = !editingGame;
+  F('game-error').hidden = true;
+  F('g-name').value = editingGame?.name || '';
+  F('g-low').checked = !!editingGame?.lowWins;
+  F('g-coop').checked = !!editingGame?.coop;
+  F('g-factions').checked = !!editingGame?.factions;
+  F('g-min').value = editingGame?.minPlayers ?? '';
+  F('g-max').value = editingGame?.maxPlayers ?? '';
+  F('g-time').value = editingGame?.playTime ?? '';
+  F('g-low-wrap').hidden = F('g-coop').checked;
+  F('g-newexp').value = '';
+  expDraft = editingGame ? editingGame.expansions.map(x => ({ ...x })) : [];
+  drawExpRows();
+  gameDlg.showModal();
+  if (!editingGame) setTimeout(() => F('g-name').focus(), 50);
+}
+function drawExpRows() {
+  F('g-exps').innerHTML = expDraft.length
+    ? expDraft.map(x => {
+        const n = db.sessions.filter(s => s.expansionIds.includes(x.id)).length;
+        return `<div class="exp-row">
+          <input type="text" data-xname="${x.id}" value="${esc(x.name)}" aria-label="Expansion name">
+          <span class="used">${n ? `used ${n}×` : 'unused'}</span>
+          <button type="button" class="icon-btn" data-xremove="${x.id}" aria-label="Remove ${esc(x.name)}">${trashSVG}</button>
+        </div>`;
+      }).join('')
+    : '<span class="muted">No expansions yet.</span>';
+}
+function gameError(msg) {
+  F('game-error').textContent = msg;
+  F('game-error').hidden = false;
+  F('game-error').scrollIntoView({ block: 'nearest' });
+}
+function addExpansionToDraft() {
+  const name = F('g-newexp').value.trim();
+  if (!name) return;
+  if (!expDraft.some(x => x.name.trim().toLowerCase() === name.toLowerCase())) expDraft.push({ id: newId(), name });
+  F('g-newexp').value = '';
+  drawExpRows();
+}
+F('g-exps').addEventListener('input', e => {
+  const x = expDraft.find(x => x.id === e.target.dataset.xname);
+  if (x) x.name = e.target.value;
+});
+F('g-exps').addEventListener('click', e => {
+  const b = e.target.closest('[data-xremove]');
+  if (!b) return;
+  expDraft = expDraft.filter(x => x.id !== b.dataset.xremove);
+  drawExpRows();
+});
+F('g-addexp').addEventListener('click', addExpansionToDraft);
+F('g-newexp').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addExpansionToDraft(); } });
+F('g-coop').addEventListener('change', () => { F('g-low-wrap').hidden = F('g-coop').checked; });
+F('game-cancel').addEventListener('click', () => gameDlg.close());
+gameDlg.addEventListener('close', () => render());
+
+F('game-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = F('g-name').value.trim();
+  if (!name) return gameError('Enter the game’s name.');
+  const other = gameByName(name);
+  if (other && other !== editingGame) return gameError(`${other.name} already exists.`);
+  const int = id => F(id).value.trim() === '' ? null : Number(F(id).value);
+  let minPlayers = int('g-min'), maxPlayers = int('g-max');
+  const playTime = int('g-time');
+  if ([minPlayers, maxPlayers, playTime].some(v => v !== null && !(Number.isInteger(v) && v > 0))) return gameError('Player counts and minutes must be whole numbers.');
+  minPlayers ??= maxPlayers;
+  maxPlayers ??= minPlayers;
+  if (minPlayers > maxPlayers) return gameError('Min players can’t be more than max players.');
+  const expansions = expDraft.map(x => ({ id: x.id, name: x.name.trim() })).filter(x => x.name);
+  const names = expansions.map(x => x.name.toLowerCase());
+  const dup = expansions.find((x, i) => names.indexOf(x.name.toLowerCase()) !== i);
+  if (dup) return gameError(`There are two expansions called ${dup.name}.`);
+  const kept = new Set(expansions.map(x => x.id));
+  const affected = editingGame ? sessionsOfGame(editingGame.id).filter(s => s.expansionIds.some(x => !kept.has(x))) : [];
+  if (affected.length && !confirm(`Removed expansions will be taken off ${affected.length} session${affected.length > 1 ? 's' : ''}. Their scores stay.`)) return;
+  const id = editingGame?.id || newId();
+  const coop = F('g-coop').checked;
+  const data = { name, coop, lowWins: !coop && F('g-low').checked, factions: F('g-factions').checked, minPlayers, maxPlayers, playTime, expansions };
+  const ops = [b => b.set(doc(gamesCol(), id), data)];
+  affected.forEach(s => {
+    const expansionIds = s.expansionIds.filter(x => kept.has(x));
+    ops.push(b => b.set(doc(sessionsCol(), s.id), { expansionIds }, { merge: true }));
+  });
+  runBatched(ops);
+  gameDlg.close();
+  toast(editingGame ? 'Game updated' : 'Game added');
+});
+F('game-delete').addEventListener('click', () => {
+  const n = sessionsOfGame(editingGame.id).length;
+  if (n) return gameError(`${editingGame.name} is used in ${n} session${n > 1 ? 's' : ''}. Delete those sessions first.`);
+  if (!confirm(`Delete ${editingGame.name}?`)) return;
+  write(deleteDoc(doc(gamesCol(), editingGame.id)));
+  gameDlg.close();
+  toast('Game deleted');
 });
 
 /* =========================================================
