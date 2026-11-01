@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Game Night Scores</title>
+<meta name="theme-color" content="#1D2440">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Scores">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root {
+  --ink: #1D2440;
+  --ink-soft: #5A6180;
+  --bg: #EEF0F5;
+  --surface: #FFFFFF;
+  --line: #DADDE7;
+  --gold: #F2B33D;
+  --gold-ink: #6B4A00;
+  --danger: #C2412F;
+  --nav-bg: #1D2440;
+  --nav-ink: #C9CDE0;
+  --nav-active: #F2B33D;
+  --radius-lg: 18px;
+  --radius-sm: 10px;
+  color-scheme: light;
+  font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #E8EAF3;
+    --ink-soft: #9AA0BC;
+    --bg: #12162A;
+    --surface: #1C2140;
+    --line: #2E3458;
+    --gold-ink: #F2B33D;
+    --nav-bg: #0C0F1F;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+  font-size: 16px;
+  line-height: 1.45;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+/* ---------- Layout ---------- */
+.app { display: flex; flex-direction: column; min-height: 100%; }
+header.top {
+  background: var(--nav-bg);
+  color: #fff;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 16px;
+}
+header.top h1 { margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; }
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 100px);
+}
+nav.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; background: var(--nav-bg);
+  padding: 6px 8px calc(env(safe-area-inset-bottom, 0px) + 6px);
+  z-index: 20;
+}
+nav.tabs button {
+  flex: 1; background: none; border: 0; color: var(--nav-ink);
+  padding: 8px 4px; font-size: 0.8rem; font-weight: 600;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  border-radius: var(--radius-sm);
+}
+nav.tabs button svg { width: 24px; height: 24px; }
+nav.tabs button[aria-current="page"] { color: var(--nav-active); }
+
+@media (min-width: 900px) {
+  .app { flex-direction: row; }
+  header.top { display: none; }
+  nav.tabs {
+    position: sticky; top: 0; height: 100vh; width: 220px; flex: none;
+    flex-direction: column; justify-content: flex-start; gap: 4px;
+    padding: 28px 14px;
+  }
+  nav.tabs::before {
+    content: "Game Night Scores"; color: #fff; font-weight: 800; font-size: 1.2rem;
+    padding: 0 10px 22px;
+  }
+  nav.tabs button {
+    flex: none; flex-direction: row; justify-content: flex-start; gap: 12px;
+    font-size: 1rem; padding: 12px; text-align: left;
+  }
+  nav.tabs button[aria-current="page"] { background: rgba(255,255,255,0.07); }
+  main { padding: 36px 40px 60px; }
+}
+
+/* ---------- Common ---------- */
+.view-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.view-head h2 { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
+.btn {
+  border: 0; border-radius: 999px; padding: 11px 18px; font-weight: 700;
+  background: var(--gold); color: #1D2440;
+}
+.btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+.btn.danger { background: transparent; color: var(--danger); border: 1.5px solid currentColor; }
+.btn.small { padding: 7px 12px; font-size: 0.9rem; }
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.field label, .field .label { font-weight: 700; font-size: 0.9rem; color: var(--ink-soft); }
+input[type=text], input[type=date], select, textarea, input[type=search] {
+  width: 100%; padding: 12px 14px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--line); background: var(--surface);
+  font-size: 16px; /* prevents iOS zoom */
+}
+textarea { min-height: 70px; resize: vertical; }
+.empty {
+  text-align: center; padding: 48px 20px; color: var(--ink-soft);
+  border: 2px dashed var(--line); border-radius: var(--radius-lg);
+}
+.empty p { margin: 0 0 16px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: none; }
+.muted { color: var(--ink-soft); }
+
+/* ---------- Sessions ---------- */
+.filters { display: flex; gap: 10px; margin-bottom: 18px; }
+.filters select { max-width: 260px; }
+.month { font-weight: 700; color: var(--ink-soft); margin: 26px 0 10px; font-size: 0.95rem; }
+.month:first-child { margin-top: 0; }
+.grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1200px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+.session {
+  background: var(--surface); border-radius: var(--radius-lg); padding: 16px 16px 14px;
+  border: 1px solid var(--line); text-align: left; width: 100%;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.session .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.session .game { font-weight: 800; font-size: 1.15rem; }
+.session .date { color: var(--ink-soft); font-size: 0.85rem; white-space: nowrap; }
+.winner {
+  display: flex; align-items: center; gap: 10px;
+  background: color-mix(in srgb, var(--gold) 18%, transparent);
+  border-radius: var(--radius-sm); padding: 8px 12px;
+}
+.winner .crown { width: 22px; height: 22px; color: var(--gold); flex: none; }
+.winner .name { font-weight: 800; flex: 1; color: var(--gold-ink); }
+.winner .score { font-weight: 800; font-size: 1.5rem; font-variant-numeric: tabular-nums; color: var(--gold-ink); }
+.others { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.92rem; }
+.others span { display: inline-flex; align-items: center; gap: 6px; }
+.others b { font-variant-numeric: tabular-nums; }
+.tag { font-size: 0.75rem; font-weight: 700; color: var(--ink-soft); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; }
+
+.fab {
+  position: fixed; right: 18px; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); z-index: 25;
+  box-shadow: 0 6px 18px rgba(29,36,64,0.3); padding: 15px 22px; font-size: 1rem;
+}
+@media (min-width: 900px) { .fab { display: none; } }
+.desk-only { display: none; }
+@media (min-width: 900px) { .desk-only { display: inline-block; } }
+
+/* ---------- Players ---------- */
+.add-row { display: flex; gap: 10px; margin-bottom: 18px; max-width: 520px; }
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; max-width: 720px; }
+.list-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-top: 1px solid var(--line); }
+.list-item:first-child { border-top: 0; }
+.list-item .grow { flex: 1; min-width: 0; }
+.list-item .title { font-weight: 700; }
+.list-item .sub { font-size: 0.85rem; color: var(--ink-soft); }
+.icon-btn { background: none; border: 0; padding: 8px; border-radius: var(--radius-sm); color: var(--ink-soft); }
+.icon-btn svg { width: 20px; height: 20px; display: block; }
+
+/* ---------- Stats ---------- */
+.stats-wrap { display: grid; gap: 28px; grid-template-columns: 1fr; }
+@media (min-width: 1000px) { .stats-wrap { grid-template-columns: 1fr 1fr; } }
+.stats-wrap h3 { margin: 0 0 10px; font-size: 1.1rem; }
+table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+th, td { padding: 11px 14px; text-align: left; border-top: 1px solid var(--line); }
+thead th { border-top: 0; font-size: 0.85rem; color: var(--ink-soft); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.table-scroll { overflow-x: auto; }
+.data-box { max-width: 720px; margin-top: 32px; }
+.data-box p { color: var(--ink-soft); margin: 0 0 12px; }
+.data-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ---------- Session editor ---------- */
+dialog {
+  border: 0; padding: 0; background: var(--surface); color: var(--ink);
+  width: 100%; max-width: 560px; max-height: 100%;
+  border-radius: var(--radius-lg);
+}
+dialog::backdrop { background: rgba(12,15,31,0.55); }
+@media (max-width: 600px) {
+  dialog { margin: 0; max-width: none; height: 100%; max-height: none; border-radius: 0; }
+}
+.sheet { display: flex; flex-direction: column; height: 100%; max-height: 92vh; }
+@media (max-width: 600px) { .sheet { max-height: none; } }
+.sheet-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px; border-bottom: 1px solid var(--line);
+}
+.sheet-head h2 { margin: 0; font-size: 1.15rem; }
+.sheet-body { padding: 18px 16px; overflow-y: auto; flex: 1; }
+.sheet-foot {
+  display: flex; gap: 10px; justify-content: space-between;
+  padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 12px); border-top: 1px solid var(--line);
+}
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1.5px solid var(--line); background: transparent; border-radius: 999px;
+  padding: 8px 14px; display: inline-flex; align-items: center; gap: 8px; font-weight: 600;
+}
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--surface); }
+.toggle { display: flex; align-items: center; gap: 10px; font-weight: 600; margin-bottom: 16px; }
+.toggle input { width: 22px; height: 22px; accent-color: var(--gold); }
+.score-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.score-row:first-child { border-top: 0; }
+.score-row .pname { flex: 1; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.score-row input {
+  width: 96px; text-align: right; padding: 10px 12px; font-size: 1.2rem; font-weight: 700;
+  border-radius: var(--radius-sm); border: 1.5px solid var(--line); background: var(--bg);
+  font-variant-numeric: tabular-nums;
+}
+.score-row .sign { width: 40px; height: 44px; border-radius: var(--radius-sm); border: 1.5px solid var(--line); background: transparent; font-weight: 800; }
+.inline-add { display: flex; gap: 8px; margin-top: 10px; }
+.error { color: var(--danger); font-weight: 600; margin: 0 0 12px; }
+
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 150px);
+  background: var(--ink); color: var(--surface); padding: 10px 18px; border-radius: 999px;
+  font-weight: 600; z-index: 100; opacity: 0; transition: opacity .2s; pointer-events: none;
+}
+.toast.show { opacity: 1; }
+@media (min-width: 900px) { .toast { bottom: 30px; } }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+/* ---------- Sign-in ---------- */
+.auth {
+  min-height: 100%; display: flex; align-items: center; justify-content: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 24px) 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
+  background: var(--nav-bg);
+}
+.auth-card { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 24px; width: 100%; max-width: 400px; }
+.auth-logo { width: 56px; height: 56px; border-radius: 14px; display: block; margin-bottom: 16px; }
+.auth h1 { margin: 0 0 6px; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
+.auth .lede { margin: 0 0 22px; color: var(--ink-soft); }
+.auth input[type=email], .auth input[type=password] {
+  width: 100%; padding: 12px 14px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--line); background: var(--bg); font-size: 16px;
+}
+.auth-actions { display: flex; gap: 10px; margin-top: 6px; }
+.auth-actions .btn { flex: 1; }
+.linkish { background: none; border: 0; padding: 0; margin-top: 16px; color: var(--ink-soft); text-decoration: underline; font-size: 0.92rem; }
+#auth-msg.ok { color: var(--ink); }
+.btn:disabled { opacity: 0.6; }
+
+</style>
+</head>
+<body>
+<div class="auth" id="auth-screen" hidden>
+  <div class="auth-card">
+    <img class="auth-logo" src="icon-192.png" alt="">
+    <h1>Game Night Scores</h1>
+    <p class="lede">Sign in to see your scores on every device.</p>
+    <div id="auth-setup" hidden>
+      <p class="error">Firebase isn’t set up yet. Paste your project’s config into firebase-config.js and upload it again.</p>
+    </div>
+    <form id="auth-form">
+      <p class="error" id="auth-msg" hidden></p>
+      <div class="field">
+        <label for="auth-email">Email</label>
+        <input type="email" id="auth-email" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="auth-pass">Password</label>
+        <input type="password" id="auth-pass" autocomplete="current-password" minlength="6" required>
+      </div>
+      <div class="auth-actions">
+        <button class="btn" type="submit">Sign in</button>
+        <button class="btn ghost" type="button" id="auth-signup">Create account</button>
+      </div>
+      <button class="linkish" type="button" id="auth-reset">Forgot password?</button>
+    </form>
+  </div>
+</div>
+
+<div class="app" hidden>
+  <header class="top"><h1>Game Night Scores</h1></header>
+
+  <nav class="tabs" aria-label="Sections">
+    <button data-view="sessions" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+      Sessions
+    </button>
+    <button data-view="players">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6M17 4a4 4 0 0 1 0 8M22 21c0-3-2-5-4-5.5"/></svg>
+      Players
+    </button>
+    <button data-view="stats">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      Stats
+    </button>
+  </nav>
+
+  <main id="main"></main>
+</div>
+
+<button class="btn fab" id="fab" hidden>New session</button>
+
+<dialog id="editor" aria-labelledby="editor-title">
+  <form class="sheet" method="dialog" id="editor-form">
+    <div class="sheet-head">
+      <h2 id="editor-title">New session</h2>
+      <button type="button" class="btn ghost small" id="editor-cancel">Cancel</button>
+    </div>
+    <div class="sheet-body">
+      <p class="error" id="editor-error" hidden></p>
+      <div class="two">
+        <div class="field">
+          <label for="f-game">Game</label>
+          <input type="text" id="f-game" list="game-names" autocomplete="off" placeholder="e.g. Catan">
+          <datalist id="game-names"></datalist>
+        </div>
+        <div class="field">
+          <label for="f-date">Date</label>
+          <input type="date" id="f-date">
+        </div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="f-low"> Lowest score wins</label>
+
+      <div class="field">
+        <span class="label">Who played?</span>
+        <div class="chips" id="f-players"></div>
+        <div class="inline-add">
+          <input type="text" id="f-newplayer" placeholder="Add a new player" autocomplete="off">
+          <button type="button" class="btn ghost small" id="f-addplayer">Add</button>
+        </div>
+      </div>
+
+      <div class="field" id="scores-field" hidden>
+        <span class="label">Final scores</span>
+        <div id="f-scores"></div>
+      </div>
+
+      <div class="field">
+        <label for="f-notes">Notes (optional)</label>
+        <textarea id="f-notes" placeholder="Expansion used, house rules, who brought snacks…"></textarea>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="btn danger" id="editor-delete" hidden>Delete</button>
+      <span></span>
+      <button type="submit" class="btn" id="editor-save">Save session</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="import-file" accept="application/json,.json" hidden>
+
+<script type="module">
+import { firebaseConfig } from './firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  sendPasswordResetEmail, signOut
+} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+import {
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch
+} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+
+/* =========================================================
+   Firebase setup
+   ========================================================= */
+const configured = firebaseConfig && firebaseConfig.apiKey && !String(firebaseConfig.apiKey).startsWith('PASTE');
+let auth, fs;
+if (configured) {
+  const app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  // Offline cache: the app works without signal and syncs when back online.
+  fs = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+}
+
+const LEGACY_KEY = 'gameNightScores.v1';   // data saved by the first (device-only) version
+const COLORS = ['#E4572E', '#2E86AB', '#F2B33D', '#4CAF7A', '#9B5DE5', '#F15BB5', '#00A6A6', '#8D6E63', '#5C6BC0', '#C0CA33'];
+
+let user = null;
+let db = { players: [], sessions: [], lowWinsGames: {} };
+let loaded = { players: false, sessions: false };
+let pendingSync = false;
+let unsubs = [];
+
+const playersCol = () => collection(fs, 'users', user.uid, 'players');
+const sessionsCol = () => collection(fs, 'users', user.uid, 'sessions');
+const settingsRef = () => doc(fs, 'users', user.uid, 'meta', 'settings');
+const newId = () => doc(playersCol()).id;
+
+// Writes apply locally straight away; the promise only settles once the server confirms,
+// which can be much later when offline, so we never wait on it.
+const write = p => p.catch(err => { console.error(err); toast('Couldn’t save to your account. Check you’re signed in.'); });
+
+function startSync() {
+  stopSync();
+  loaded = { players: false, sessions: false };
+  unsubs.push(onSnapshot(playersCol(), snap => {
+    db.players = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    loaded.players = true; afterSnapshot();
+  }, onSyncError));
+  unsubs.push(onSnapshot(sessionsCol(), { includeMetadataChanges: true }, snap => {
+    db.sessions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    pendingSync = snap.metadata.hasPendingWrites;
+    loaded.sessions = true; afterSnapshot();
+  }, onSyncError));
+  unsubs.push(onSnapshot(settingsRef(), snap => {
+    db.lowWinsGames = (snap.exists() && snap.data().lowWinsGames) || {};
+  }, onSyncError));
+}
+function stopSync() { unsubs.forEach(u => u()); unsubs = []; }
+function onSyncError(err) {
+  console.error(err);
+  toast(err.code === 'permission-denied' ? 'Database rules are blocking access. Check the Firestore rules.' : 'Sync problem. Your changes are kept on this device.');
+}
+
+let migrationChecked = false;
+function afterSnapshot() {
+  if (loaded.players && loaded.sessions && !migrationChecked) { migrationChecked = true; offerLegacyUpload(); }
+  if (!dlg.open) render();
+}
+
+// Moves scores saved by the device-only version into the account (once per account per device).
+function offerLegacyUpload() {
+  let legacy;
+  try { legacy = JSON.parse(localStorage.getItem(LEGACY_KEY) || 'null'); } catch { legacy = null; }
+  const flag = `gameNightScores.uploaded.${user.uid}`;
+  if (!legacy || !legacy.sessions?.length && !legacy.players?.length || localStorage.getItem(flag)) return;
+  const ok = confirm(`This device has ${legacy.players.length} players and ${legacy.sessions.length} sessions from before you signed in.\n\nAdd them to your account so they sync everywhere?`);
+  localStorage.setItem(flag, '1');
+  if (ok) { mergeIn(legacy); toast('Added your earlier scores to your account'); }
+}
+
+/* =========================================================
+   Data helpers
+   ========================================================= */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const playerById = id => db.players.find(p => p.id === id);
+const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+
+function addPlayer(name) {
+  name = name.trim();
+  if (!name) return null;
+  const existing = db.players.find(p => p.name.toLowerCase() === name.toLowerCase());
+  if (existing) return existing;
+  const p = { id: newId(), name, color: COLORS[db.players.length % COLORS.length] };
+  db.players.push(p); // show immediately; the live listener will confirm it
+  write(setDoc(doc(playersCol(), p.id), { name: p.name, color: p.color }));
+  return p;
+}
+
+function winnersOf(s) {
+  if (!s.results?.length) return [];
+  const scores = s.results.map(r => r.score);
+  const best = s.lowWins ? Math.min(...scores) : Math.max(...scores);
+  return s.results.filter(r => r.score === best).map(r => r.playerId);
+}
+function sortedResults(s) {
+  return [...(s.results || [])].sort((a, b) => s.lowWins ? a.score - b.score : b.score - a.score);
+}
+function gameNames() {
+  return [...new Set(db.sessions.map(s => s.game))].sort((a, b) => a.localeCompare(b));
+}
+
+// Firestore batches hold up to 500 writes; chunk to be safe.
+async function runBatched(ops) {
+  for (let i = 0; i < ops.length; i += 400) {
+    const b = writeBatch(fs);
+    ops.slice(i, i + 400).forEach(op => op(b));
+    write(b.commit());
+  }
+}
+const stripId = ({ id, ...rest }) => rest;
+
+function mergeIn(data) {
+  const ops = [];
+  (data.players || []).forEach(p => ops.push(b => b.set(doc(playersCol(), p.id), stripId(p), { merge: true })));
+  (data.sessions || []).forEach(s => ops.push(b => b.set(doc(sessionsCol(), s.id), stripId(s), { merge: true })));
+  if (data.lowWinsGames && Object.keys(data.lowWinsGames).length)
+    ops.push(b => b.set(settingsRef(), { lowWinsGames: data.lowWinsGames }, { merge: true }));
+  runBatched(ops);
+}
+function replaceWith(data) {
+  const ops = [];
+  db.players.forEach(p => ops.push(b => b.delete(doc(playersCol(), p.id))));
+  db.sessions.forEach(s => ops.push(b => b.delete(doc(sessionsCol(), s.id))));
+  ops.push(b => b.set(settingsRef(), { lowWinsGames: data.lowWinsGames || {} }));
+  runBatched(ops);
+  mergeIn({ ...data, lowWinsGames: {} });
+}
+
+/* =========================================================
+   Sign-in screen
+   ========================================================= */
+const authScreen = document.getElementById('auth-screen');
+const A = id => document.getElementById(id);
+
+function authError(code) {
+  return ({
+    'auth/invalid-email': 'That email address doesn’t look right.',
+    'auth/missing-password': 'Enter your password.',
+    'auth/invalid-credential': 'Email or password is incorrect.',
+    'auth/wrong-password': 'Email or password is incorrect.',
+    'auth/user-not-found': 'No account with that email. Choose “Create account”.',
+    'auth/email-already-in-use': 'An account with that email exists. Choose “Sign in”.',
+    'auth/weak-password': 'Use a password of at least 6 characters.',
+    'auth/network-request-failed': 'No connection. Connect to the internet to sign in.',
+    'auth/too-many-requests': 'Too many attempts. Wait a few minutes and try again.',
+    'auth/unauthorized-domain': 'This web address isn’t allowed yet. Add it under Authentication > Settings > Authorized domains.',
+    'auth/operation-not-allowed': 'Email sign-in isn’t switched on in Firebase yet.'
+  })[code] || `Something went wrong (${code}).`;
+}
+function showAuthMsg(msg, isError = true) {
+  const el = A('auth-msg');
+  el.textContent = msg; el.hidden = !msg; el.classList.toggle('ok', !isError);
+}
+async function doAuth(kind) {
+  const email = A('auth-email').value.trim();
+  const pass = A('auth-pass').value;
+  showAuthMsg('');
+  authScreen.querySelectorAll('button').forEach(b => b.disabled = true);
+  try {
+    if (kind === 'signup') await createUserWithEmailAndPassword(auth, email, pass);
+    else await signInWithEmailAndPassword(auth, email, pass);
+  } catch (e) { showAuthMsg(authError(e.code)); }
+  authScreen.querySelectorAll('button').forEach(b => b.disabled = false);
+}
+A('auth-form').addEventListener('submit', e => { e.preventDefault(); doAuth('signin'); });
+A('auth-signup').addEventListener('click', () => doAuth('signup'));
+A('auth-reset').addEventListener('click', async () => {
+  const email = A('auth-email').value.trim();
+  if (!email) return showAuthMsg('Enter your email first, then choose “Forgot password?”.');
+  try { await sendPasswordResetEmail(auth, email); showAuthMsg(`Password reset email sent to ${email}.`, false); }
+  catch (e) { showAuthMsg(authError(e.code)); }
+});
+
+if (!configured) {
+  authScreen.hidden = false;
+  A('auth-setup').hidden = false;
+  A('auth-form').hidden = true;
+} else {
+  onAuthStateChanged(auth, u => {
+    user = u;
+    authScreen.hidden = !!u;
+    document.querySelector('.app').hidden = !u;
+    document.getElementById('fab').hidden = !u || currentView !== 'sessions';
+    if (u) { migrationChecked = false; startSync(); render(); }
+    else { stopSync(); db = { players: [], sessions: [], lowWinsGames: {} }; A('auth-pass').value = ''; }
+  });
+}
+
+/* =========================================================
+   Navigation
+   ========================================================= */
+let currentView = 'sessions';
+let gameFilter = '';
+const main = document.getElementById('main');
+
+document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => show(b.dataset.view)));
+function show(view) {
+  currentView = view;
+  document.querySelectorAll('nav.tabs button').forEach(b => {
+    if (b.dataset.view === view) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  });
+  document.getElementById('fab').hidden = view !== 'sessions';
+  render();
+  window.scrollTo(0, 0);
+}
+function render() {
+  if (!user) return;
+  if (!loaded.players || !loaded.sessions) { main.innerHTML = '<p class="muted">Loading your scores…</p>'; return; }
+  if (currentView === 'sessions') renderSessions();
+  else if (currentView === 'players') renderPlayers();
+  else renderStats();
+}
+
+const crownSVG = '<svg class="crown" viewBox="0 0 24 24" fill="currentColor"><path d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5L3 7z"/></svg>';
+const editSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+const trashSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>';
+
+/* =========================================================
+   Sessions view
+   ========================================================= */
+function renderSessions() {
+  const games = gameNames();
+  if (gameFilter && !games.includes(gameFilter)) gameFilter = '';
+  const list = db.sessions
+    .filter(s => !gameFilter || s.game === gameFilter)
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.created || 0) - (a.created || 0));
+
+  let html = `<div class="view-head"><h2>Sessions</h2>
+    <button class="btn desk-only" data-action="new">New session</button></div>`;
+
+  if (!db.sessions.length) {
+    html += `<div class="empty"><p>No sessions yet. Log your first game night’s final scores.</p>
+      <button class="btn" data-action="new">New session</button></div>`;
+    main.innerHTML = html; return;
+  }
+
+  html += `<div class="filters"><select id="game-filter" aria-label="Filter by game">
+    <option value="">All games (${db.sessions.length})</option>
+    ${games.map(g => `<option value="${esc(g)}" ${g === gameFilter ? 'selected' : ''}>${esc(g)}</option>`).join('')}
+  </select></div>`;
+
+  let lastMonth = '', open = false;
+  list.forEach(s => {
+    const d = new Date(s.date + 'T00:00:00');
+    const month = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    if (month !== lastMonth) {
+      if (open) html += '</div>';
+      html += `<div class="month">${esc(month)}</div><div class="grid">`;
+      open = true; lastMonth = month;
+    }
+    const wins = winnersOf(s);
+    const res = sortedResults(s);
+    const winnerNames = wins.map(id => playerById(id)?.name || 'Unknown').join(' & ');
+    const winScore = res[0]?.score ?? '';
+    const others = res.filter(r => !wins.includes(r.playerId));
+    html += `<button class="session" data-edit="${s.id}">
+      <div class="row1"><span class="game">${esc(s.game)}</span>
+        <span class="date">${d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span></div>
+      <div class="winner">${crownSVG}<span class="name">${esc(winnerNames)}${wins.length > 1 ? ' (tie)' : ''}</span><span class="score">${esc(winScore)}</span></div>
+      ${others.length ? `<div class="others">${others.map(r => {
+        const p = playerById(r.playerId);
+        return `<span><i class="dot" style="background:${p?.color || '#999'}"></i>${esc(p?.name || 'Unknown')} <b>${r.score}</b></span>`;
+      }).join('')}</div>` : ''}
+      ${s.lowWins ? '<span class="tag" style="align-self:flex-start">Lowest wins</span>' : ''}
+    </button>`;
+  });
+  if (open) html += '</div>';
+  main.innerHTML = html;
+  document.getElementById('game-filter').addEventListener('change', e => { gameFilter = e.target.value; renderSessions(); });
+}
+
+main.addEventListener('click', e => {
+  const editBtn = e.target.closest('[data-edit]');
+  if (editBtn) return openEditor(editBtn.dataset.edit);
+  const act = e.target.closest('[data-action]');
+  if (!act) return;
+  const a = act.dataset.action;
+  if (a === 'new') openEditor();
+  if (a === 'rename-player') renamePlayer(act.dataset.id);
+  if (a === 'delete-player') deletePlayer(act.dataset.id);
+  if (a === 'export') exportData();
+  if (a === 'import') document.getElementById('import-file').click();
+  if (a === 'signout' && confirm('Sign out on this device?')) signOut(auth);
+});
+document.getElementById('fab').addEventListener('click', () => openEditor());
+
+/* =========================================================
+   Players view
+   ========================================================= */
+function renderPlayers() {
+  let html = `<div class="view-head"><h2>Players</h2></div>
+    <form class="add-row" id="add-player-form">
+      <input type="text" id="new-player" placeholder="Player name" autocomplete="off" aria-label="Player name">
+      <button class="btn" type="submit">Add player</button>
+    </form>`;
+  if (!db.players.length) {
+    html += `<div class="empty"><p>Add the people you play with. You can also add players while logging a session.</p></div>`;
+  } else {
+    const sorted = [...db.players].sort((a, b) => a.name.localeCompare(b.name));
+    html += `<div class="list">${sorted.map(p => {
+      const played = db.sessions.filter(s => s.results.some(r => r.playerId === p.id)).length;
+      const won = db.sessions.filter(s => winnersOf(s).includes(p.id)).length;
+      return `<div class="list-item">
+        <i class="dot" style="background:${p.color};width:16px;height:16px"></i>
+        <div class="grow"><div class="title">${esc(p.name)}</div>
+          <div class="sub">${played} played, ${won} won</div></div>
+        <button class="icon-btn" data-action="rename-player" data-id="${p.id}" aria-label="Rename ${esc(p.name)}">${editSVG}</button>
+        <button class="icon-btn" data-action="delete-player" data-id="${p.id}" aria-label="Delete ${esc(p.name)}">${trashSVG}</button>
+      </div>`;
+    }).join('')}</div>`;
+  }
+  main.innerHTML = html;
+  document.getElementById('add-player-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const input = document.getElementById('new-player');
+    if (!input.value.trim()) return;
+    const before = db.players.length;
+    const p = addPlayer(input.value);
+    toast(db.players.length > before ? `Added ${p.name}` : `${p.name} is already a player`);
+    renderPlayers();
+    document.getElementById('new-player').focus();
+  });
+}
+function renamePlayer(id) {
+  const p = playerById(id);
+  const name = prompt('Rename player', p.name);
+  if (name && name.trim()) {
+    p.name = name.trim();
+    write(setDoc(doc(playersCol(), id), { name: p.name }, { merge: true }));
+    render();
+  }
+}
+function deletePlayer(id) {
+  const p = playerById(id);
+  const affected = db.sessions.filter(s => s.results.some(r => r.playerId === id));
+  const msg = affected.length
+    ? `Delete ${p.name}? Their scores will be removed from ${affected.length} session${affected.length > 1 ? 's' : ''}.`
+    : `Delete ${p.name}?`;
+  if (!confirm(msg)) return;
+  const ops = [b => b.delete(doc(playersCol(), id))];
+  affected.forEach(s => {
+    const results = s.results.filter(r => r.playerId !== id);
+    const ref = doc(sessionsCol(), s.id);
+    ops.push(results.length ? b => b.set(ref, { results }, { merge: true }) : b => b.delete(ref));
+  });
+  runBatched(ops);
+  toast(`Deleted ${p.name}`);
+}
+
+/* =========================================================
+   Stats view
+   ========================================================= */
+function renderStats() {
+  let html = `<div class="view-head"><h2>Stats</h2></div>`;
+  if (!db.sessions.length) {
+    html += `<div class="empty"><p>Stats appear once you’ve logged a session.</p></div>`;
+  } else {
+    const pRows = db.players.map(p => {
+      const played = db.sessions.filter(s => s.results.some(r => r.playerId === p.id)).length;
+      const won = db.sessions.filter(s => winnersOf(s).includes(p.id)).length;
+      return { p, played, won, rate: played ? won / played : 0 };
+    }).filter(r => r.played).sort((a, b) => b.won - a.won || b.rate - a.rate);
+
+    const gRows = gameNames().map(g => {
+      const ss = db.sessions.filter(s => s.game === g);
+      const tally = {};
+      ss.forEach(s => winnersOf(s).forEach(id => tally[id] = (tally[id] || 0) + 1));
+      const topN = Math.max(0, ...Object.values(tally));
+      const champs = Object.keys(tally).filter(id => tally[id] === topN).map(id => playerById(id)?.name).filter(Boolean);
+      const low = ss.some(s => s.lowWins);
+      const all = ss.flatMap(s => s.results);
+      const bestR = [...all].sort((a, b) => low ? a.score - b.score : b.score - a.score)[0];
+      return { g, n: ss.length, champs: champs.join(', '), best: bestR ? `${bestR.score} (${playerById(bestR.playerId)?.name || '?'})` : '' };
+    }).sort((a, b) => b.n - a.n);
+
+    html += `<div class="stats-wrap">
+      <section><h3>Players</h3><div class="table-scroll"><table>
+        <thead><tr><th>Player</th><th class="num">Played</th><th class="num">Wins</th><th class="num">Win rate</th></tr></thead>
+        <tbody>${pRows.map(r => `<tr><td><i class="dot" style="background:${r.p.color};margin-right:8px"></i>${esc(r.p.name)}</td>
+          <td class="num">${r.played}</td><td class="num">${r.won}</td><td class="num">${Math.round(r.rate * 100)}%</td></tr>`).join('')}</tbody>
+      </table></div></section>
+      <section><h3>Games</h3><div class="table-scroll"><table>
+        <thead><tr><th>Game</th><th class="num">Played</th><th>Most wins</th><th>Best score</th></tr></thead>
+        <tbody>${gRows.map(r => `<tr><td>${esc(r.g)}</td><td class="num">${r.n}</td><td>${esc(r.champs)}</td><td>${esc(r.best)}</td></tr>`).join('')}</tbody>
+      </table></div></section>
+    </div>`;
+  }
+  html += `<section class="data-box"><h3>Account</h3>
+    <p>Signed in as <b>${esc(user.email)}</b>. ${pendingSync ? 'Some changes are waiting to sync and will upload when you’re online.' : 'Everything is synced.'}</p>
+    <div class="data-actions">
+      <button class="btn" data-action="export">Export backup</button>
+      <button class="btn ghost" data-action="import">Import backup</button>
+      <button class="btn ghost" data-action="signout">Sign out</button>
+    </div></section>`;
+  main.innerHTML = html;
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify({ app: 'game-night-scores', version: 2, exported: new Date().toISOString(), ...db }, null, 2)], { type: 'application/json' });
+  const file = new File([blob], `game-night-scores-${todayISO()}.json`, { type: 'application/json' });
+  if (navigator.canShare && navigator.canShare({ files: [file] }) && /iPhone|iPad|Android/i.test(navigator.userAgent)) {
+    navigator.share({ files: [file], title: 'Game night scores backup' }).catch(() => {});
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = file.name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast('Backup exported');
+}
+document.getElementById('import-file').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  let d;
+  try {
+    d = JSON.parse(await f.text());
+    if (!Array.isArray(d.players) || !Array.isArray(d.sessions)) throw new Error('bad file');
+  } catch { return toast('That file isn’t a valid backup'); }
+  const merge = confirm(`This backup has ${d.players.length} players and ${d.sessions.length} sessions.\n\nOK = merge with your account\nCancel = choose replace instead`);
+  if (merge) mergeIn(d);
+  else {
+    if (!confirm('Replace everything in your account with the backup? This can’t be undone.')) return;
+    replaceWith(d);
+  }
+  toast('Backup imported');
+});
+
+/* =========================================================
+   Session editor
+   ========================================================= */
+const dlg = document.getElementById('editor');
+const F = id => document.getElementById(id);
+let editing = null;
+let selected = [];
+let scoreDraft = {};
+
+function openEditor(id) {
+  editing = id || null;
+  const s = id ? db.sessions.find(x => x.id === id) : null;
+  F('editor-title').textContent = s ? 'Edit session' : 'New session';
+  F('editor-delete').hidden = !s;
+  F('editor-error').hidden = true;
+  F('f-game').value = s ? s.game : '';
+  F('f-date').value = s ? s.date : todayISO();
+  F('f-low').checked = s ? !!s.lowWins : false;
+  F('f-notes').value = s ? (s.notes || '') : '';
+  F('f-newplayer').value = '';
+  selected = s ? s.results.map(r => r.playerId).filter(playerById) : [];
+  scoreDraft = {};
+  if (s) s.results.forEach(r => scoreDraft[r.playerId] = String(r.score));
+  F('game-names').innerHTML = gameNames().map(g => `<option value="${esc(g)}">`).join('');
+  drawPlayerChips(); drawScoreRows();
+  dlg.showModal();
+  if (!s) setTimeout(() => F('f-game').focus(), 50);
+}
+function drawPlayerChips() {
+  const sorted = [...db.players].sort((a, b) => a.name.localeCompare(b.name));
+  F('f-players').innerHTML = sorted.length
+    ? sorted.map(p => `<button type="button" class="chip" data-pid="${p.id}" aria-pressed="${selected.includes(p.id)}">
+        <i class="dot" style="background:${p.color}"></i>${esc(p.name)}</button>`).join('')
+    : '<span class="muted">No players yet. Add one below.</span>';
+}
+function drawScoreRows() {
+  F('scores-field').hidden = !selected.length;
+  F('f-scores').innerHTML = selected.map(pid => {
+    const p = playerById(pid);
+    return `<div class="score-row">
+      <span class="pname"><i class="dot" style="background:${p.color}"></i>${esc(p.name)}</span>
+      <button type="button" class="sign" data-sign="${pid}" aria-label="Make ${esc(p.name)}’s score negative or positive">±</button>
+      <input type="text" inputmode="decimal" data-score="${pid}" value="${esc(scoreDraft[pid] ?? '')}" placeholder="0" aria-label="${esc(p.name)} final score">
+    </div>`;
+  }).join('');
+}
+F('f-players').addEventListener('click', e => {
+  const chip = e.target.closest('[data-pid]');
+  if (!chip) return;
+  const pid = chip.dataset.pid;
+  selected = selected.includes(pid) ? selected.filter(x => x !== pid) : [...selected, pid];
+  chip.setAttribute('aria-pressed', selected.includes(pid));
+  drawScoreRows();
+});
+F('f-scores').addEventListener('input', e => {
+  if (e.target.dataset.score) scoreDraft[e.target.dataset.score] = e.target.value;
+});
+F('f-scores').addEventListener('click', e => {
+  const b = e.target.closest('[data-sign]');
+  if (!b) return;
+  const pid = b.dataset.sign;
+  let v = (scoreDraft[pid] || '').trim();
+  v = v.startsWith('-') ? v.slice(1) : '-' + v;
+  scoreDraft[pid] = v;
+  document.querySelector(`[data-score="${pid}"]`).value = v;
+});
+function addPlayerFromEditor() {
+  const name = F('f-newplayer').value;
+  if (!name.trim()) return;
+  const p = addPlayer(name);
+  if (!selected.includes(p.id)) selected.push(p.id);
+  F('f-newplayer').value = '';
+  drawPlayerChips(); drawScoreRows();
+}
+F('f-addplayer').addEventListener('click', addPlayerFromEditor);
+F('f-newplayer').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addPlayerFromEditor(); } });
+F('f-game').addEventListener('change', () => {
+  const g = F('f-game').value.trim();
+  if (g in db.lowWinsGames) F('f-low').checked = db.lowWinsGames[g];
+});
+F('editor-cancel').addEventListener('click', () => dlg.close());
+dlg.addEventListener('close', () => render());
+
+F('editor-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const err = msg => { F('editor-error').textContent = msg; F('editor-error').hidden = false; F('editor-error').scrollIntoView({ block: 'nearest' }); };
+  const game = F('f-game').value.trim();
+  if (!game) return err('Enter the game’s name.');
+  if (!selected.length) return err('Choose at least one player.');
+  const results = [];
+  for (const pid of selected) {
+    const raw = (scoreDraft[pid] ?? '').trim();
+    const n = Number(raw);
+    if (raw === '' || raw === '-' || !isFinite(n)) return err(`Enter a final score for ${playerById(pid).name}.`);
+    results.push({ playerId: pid, score: n });
+  }
+  const lowWins = F('f-low').checked;
+  const data = { game, date: F('f-date').value || todayISO(), lowWins, results, notes: F('f-notes').value.trim() };
+  const id = editing || newId();
+  if (!editing) data.created = Date.now();
+  write(setDoc(doc(sessionsCol(), id), data, { merge: true }));
+  if (db.lowWinsGames[game] !== lowWins) {
+    db.lowWinsGames[game] = lowWins;
+    write(setDoc(settingsRef(), { lowWinsGames: { [game]: lowWins } }, { merge: true }));
+  }
+  const wasEditing = editing;
+  dlg.close();
+  if (currentView !== 'sessions') show('sessions');
+  toast(wasEditing ? 'Session updated' : 'Session saved');
+});
+F('editor-delete').addEventListener('click', () => {
+  if (!editing || !confirm('Delete this session?')) return;
+  write(deleteDoc(doc(sessionsCol(), editing)));
+  dlg.close(); toast('Session deleted');
+});
+
+/* =========================================================
+   Utilities and startup
+   ========================================================= */
+let toastTimer;
+function toast(msg) {
+  const t = F('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
